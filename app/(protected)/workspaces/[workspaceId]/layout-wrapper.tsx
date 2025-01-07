@@ -12,6 +12,7 @@ export default async function LayoutWrapper({
   params,
 }: LayoutWrapperProps) {
   const supabase = await createClient()
+  const { workspaceId } = await Promise.resolve(params)
 
   const {
     data: { user },
@@ -32,7 +33,7 @@ export default async function LayoutWrapper({
   const { data: workspace } = await supabase
     .from("workspaces")
     .select("*")
-    .eq("id", params.workspaceId)
+    .eq("id", workspaceId)
     .single()
 
   if (!workspace) {

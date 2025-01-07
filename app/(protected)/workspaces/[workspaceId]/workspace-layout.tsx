@@ -1,6 +1,5 @@
 "use client"
 
-import { ThemeSwitcher } from "@/components/theme-switcher"
 import { Button } from "@/components/ui/button"
 import { Hash, Plus } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -40,9 +39,6 @@ export function WorkspaceLayout({
         {/* Workspace name */}
         <div className="border-b flex items-center justify-between h-[60px] px-4">
           <h1 className="font-semibold text-lg">{workspace.name}</h1>
-          <div className="flex items-center gap-2">
-            <ThemeSwitcher />
-          </div>
         </div>
 
         {/* Channels and DMs */}

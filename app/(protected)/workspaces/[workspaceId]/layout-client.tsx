@@ -3,7 +3,7 @@
 import { createClient } from "@/utils/supabase/client"
 import { redirect, useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Hash } from "lucide-react"
+import { Hash, Plus, LogOut, ChevronUp } from "lucide-react"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
 import {
@@ -14,8 +14,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { LogOut, ChevronUp } from "lucide-react"
 import { SignOutModal } from "@/components/modals/sign-out-modal"
+import { CreateChannelModal } from "@/components/modals/create-channel-modal"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 
@@ -35,6 +35,7 @@ export function WorkspaceLayoutClient({
   profile,
 }: WorkspaceLayoutClientProps) {
   const [showSignOutModal, setShowSignOutModal] = useState(false)
+  const [isCreateChannelOpen, setIsCreateChannelOpen] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
@@ -62,15 +63,14 @@ export function WorkspaceLayoutClient({
             <div className="space-y-1">
               {channels?.map((channel) => {
                 const channelUrl = `/workspaces/${workspace.id}/channels/${channel.id}`
-                const isActive = pathname === channelUrl
+                const isActive = pathname.startsWith(channelUrl)
 
                 return (
                   <Button
                     key={channel.id}
                     variant="ghost"
                     className={cn(
-                      "w-full justify-start",
-                      isActive && "bg-accent text-accent-foreground"
+                      "w-full justify-start hover:bg-muted-foreground/10"
                     )}
                     asChild
                   >
@@ -81,6 +81,14 @@ export function WorkspaceLayoutClient({
                   </Button>
                 )
               })}
+              <Button
+                variant="ghost"
+                className="w-full justify-start"
+                onClick={() => setIsCreateChannelOpen(true)}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add Channel
+              </Button>
             </div>
           </div>
 
@@ -143,6 +151,16 @@ export function WorkspaceLayoutClient({
         open={showSignOutModal}
         onOpenChange={setShowSignOutModal}
         onConfirm={handleSignOut}
+      />
+
+      {/* Create Channel Modal */}
+      <CreateChannelModal
+        isOpen={isCreateChannelOpen}
+        onClose={() => setIsCreateChannelOpen(false)}
+        workspaceId={workspace.id}
+        onChannelCreated={(newChannel) => {
+          router.refresh()
+        }}
       />
     </div>
   )

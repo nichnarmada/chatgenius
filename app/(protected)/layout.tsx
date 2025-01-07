@@ -1,6 +1,5 @@
 import { createClient } from "@/utils/supabase/server"
 import { redirect } from "next/navigation"
-import { ThemeSwitcher } from "@/components/theme-switcher"
 
 export default async function ProtectedLayout({
   children,
@@ -18,11 +17,6 @@ export default async function ProtectedLayout({
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Header with theme switcher */}
-      <div className="absolute top-4 right-4 z-50">
-        <ThemeSwitcher />
-      </div>
-
       {/* Main content */}
       {children}
     </div>
