@@ -1,10 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { Plus, Users, UserPlus } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { useState } from "react"
-import { JoinWorkspaceModal } from "@/components/modals/join-workspace-modal"
+import { Plus } from "lucide-react"
+import { WorkspaceCard } from "@/components/workspace/workspace-card"
 
 interface WorkspaceMember {
   user_id: string
@@ -19,80 +17,26 @@ interface Workspace {
   channels: Array<{ id: string; name: string }>
 }
 
-function WorkspaceCard({
-  workspace,
-  href,
-  showJoin = false,
-}: {
-  workspace: any
-  href: string
-  showJoin?: boolean
-}) {
-  const [showJoinModal, setShowJoinModal] = useState(false)
-
-  const handleJoinClick = (e: React.MouseEvent) => {
-    e.preventDefault() // Prevent navigation
-    setShowJoinModal(true)
-  }
-
-  return (
-    <>
-      <Link
-        href={href}
-        className="group aspect-square rounded-xl bg-card flex flex-col items-center justify-center p-4 transition-all duration-300 hover:shadow-lg relative"
-      >
-        <div className="absolute top-2 right-2 flex items-center gap-1">
-          {showJoin ? (
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-              onClick={handleJoinClick}
-            >
-              <UserPlus className="h-4 w-4" />
-            </Button>
-          ) : (
-            <>
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">
-                {workspace.memberCount}
-              </span>
-            </>
-          )}
-        </div>
-        <div className="relative w-full h-3/4 mb-2 flex items-center justify-center">
-          {workspace.image_url ? (
-            <img
-              src={workspace.image_url}
-              alt={workspace.name}
-              className="rounded-lg object-cover w-full h-full group-hover:ring-2 group-hover:ring-primary transition-all duration-300"
-            />
-          ) : (
-            <div className="w-full h-full rounded-lg bg-muted group-hover:ring-2 group-hover:ring-primary transition-all duration-300" />
-          )}
-        </div>
-        <span className="text-lg font-medium text-center">
-          {workspace.name}
-        </span>
-        {!showJoin && workspace.userRole && (
-          <span className="text-sm text-muted-foreground mt-1">
-            {workspace.userRole}
-          </span>
-        )}
-      </Link>
-
-      <JoinWorkspaceModal
-        isOpen={showJoinModal}
-        onClose={() => setShowJoinModal(false)}
-        workspace={workspace}
-      />
-    </>
-  )
-}
-
 interface WorkspacesListProps {
   initialWorkspaces: Workspace[]
   userId: string
+}
+
+function NewWorkspaceCard() {
+  return (
+    <Link
+      href="/workspaces/new"
+      className="group aspect-square rounded-xl flex flex-col items-center justify-center p-4 transition-all duration-300 hover:shadow-lg relative bg-white"
+    >
+      <div className="relative w-full h-3/4 mb-2 flex items-center justify-center bg-gray-50 rounded-lg group-hover:ring-2 group-hover:ring-blue-500 transition-all duration-300">
+        <Plus className="h-12 w-12 text-gray-400 group-hover:text-blue-500 transition-all duration-300" />
+      </div>
+      <span className="text-lg font-medium text-center mb-1">
+        New Workspace
+      </span>
+      <div className="h-6" /> {/* Spacer to match member count height */}
+    </Link>
+  )
 }
 
 export function WorkspacesList({
@@ -138,18 +82,7 @@ export function WorkspacesList({
                 />
               )
             })}
-
-            <Link
-              href="/workspaces/new"
-              className="group aspect-square rounded-xl bg-card flex flex-col items-center justify-center p-4 transition-all duration-300 hover:shadow-lg"
-            >
-              <div className="relative w-full h-3/4 mb-2 flex items-center justify-center">
-                <Plus className="h-16 w-16 text-muted-foreground group-hover:text-primary transition-all duration-300" />
-              </div>
-              <span className="text-lg font-medium text-center">
-                New Workspace
-              </span>
-            </Link>
+            <NewWorkspaceCard />
           </div>
         </section>
 
