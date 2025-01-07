@@ -62,10 +62,6 @@ export default async function LayoutWrapper({
     .select("user_id, role")
     .eq("workspace_id", workspace.id)
 
-  console.log("Workspace ID:", workspace.id)
-  console.log("Workspace Members Query Result:", workspaceMembers)
-  console.log("Workspace Members Query Error:", membersError)
-
   // Fetch profiles for workspace members
   const { data: memberProfiles, error: profilesError } = await supabase
     .from("profiles")
@@ -74,9 +70,6 @@ export default async function LayoutWrapper({
       "id",
       (workspaceMembers || []).map((member) => member.user_id)
     )
-
-  console.log("Member Profiles:", memberProfiles)
-  console.log("Profiles Error:", profilesError)
 
   // Transform the data to match our interface
   const transformedUsers = (memberProfiles || []).map((profile) => ({

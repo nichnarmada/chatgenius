@@ -59,13 +59,6 @@ export function WorkspaceLayoutClient({
   const pathname = usePathname()
   const supabase = createClient()
 
-  console.log("Current user:", user)
-  console.log("All workspace users:", workspaceUsers)
-  console.log(
-    "Filtered workspace users:",
-    workspaceUsers.filter((workspaceUser) => workspaceUser.id !== user.id)
-  )
-
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     router.push("/login")
