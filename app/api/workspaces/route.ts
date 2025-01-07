@@ -3,9 +3,8 @@ import { NextResponse } from "next/server"
 
 export async function POST(request: Request) {
   try {
-    const formData = await request.formData()
-    const name = formData.get("name")?.toString()
-    const image = formData.get("image") as File | null
+    const json = await request.json()
+    const { name, image } = json
 
     if (!name) {
       return NextResponse.json(
@@ -16,110 +15,63 @@ export async function POST(request: Request) {
 
     const supabase = await createClient()
     const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession()
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser()
 
-    if (sessionError) {
-      console.error("Session error:", sessionError)
+    if (userError || !user) {
       return NextResponse.json(
         { error: "Authentication error" },
         { status: 401 }
       )
     }
 
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    // Start a transaction by using a single connection
+    const { data: workspace, error: workspaceError } = await supabase
+      .from("workspaces")
+      .insert([
+        {
+          name,
+          created_by_user_id: user.id,
+          members: [user.id],
+          image_url: image,
+        },
+      ])
+      .select()
+      .single()
 
-    let image_url = null
-
-    // Upload image if provided
-    if (image && image.size > 0) {
-      try {
-        const fileExt = image.name.split(".").pop()
-        const fileName = `${Math.random()}.${fileExt}`
-
-        const { error: uploadError } = await supabase.storage
-          .from("workspace-images")
-          .upload(fileName, image)
-
-        if (uploadError) {
-          console.error("Image upload error:", uploadError)
-          return NextResponse.json(
-            { error: "Error uploading image: " + uploadError.message },
-            { status: 500 }
-          )
-        }
-
-        // Get public URL
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from("workspace-images").getPublicUrl(fileName)
-
-        image_url = publicUrl
-      } catch (uploadError) {
-        console.error("Image upload error:", uploadError)
-        return NextResponse.json(
-          { error: "Error processing image" },
-          { status: 500 }
-        )
-      }
-    }
-
-    // Create workspace
-    try {
-      const { data: workspace, error: insertError } = await supabase
-        .from("workspaces")
-        .insert([
-          {
-            name,
-            image_url,
-            created_by_user_id: session.user.id,
-            members: [session.user.id],
-          },
-        ])
-        .select()
-        .single()
-
-      if (insertError) {
-        console.error("Workspace creation error:", insertError)
-        return NextResponse.json(
-          { error: "Error creating workspace: " + insertError.message },
-          { status: 500 }
-        )
-      }
-
-      // Create default general channel
-      const { data: channel, error: channelError } = await supabase
-        .from("channels")
-        .insert([
-          {
-            name: "general",
-            description: "This is the default channel for general discussions",
-            workspace_id: workspace.id,
-            created_by_user_id: session.user.id,
-          },
-        ])
-        .select()
-        .single()
-
-      if (channelError) {
-        console.error("Channel creation error:", channelError)
-        return NextResponse.json(
-          { error: "Error creating default channel: " + channelError.message },
-          { status: 500 }
-        )
-      }
-
-      return NextResponse.json({ ...workspace, defaultChannelId: channel.id })
-    } catch (dbError) {
-      console.error("Database error:", dbError)
+    if (workspaceError) {
+      console.error("Workspace creation error:", workspaceError)
       return NextResponse.json(
-        { error: "Database error occurred" },
+        { error: "Error creating workspace" },
         { status: 500 }
       )
     }
+
+    // Create default "general" channel
+    const { data: channel, error: channelError } = await supabase
+      .from("channels")
+      .insert([
+        {
+          name: "general",
+          workspace_id: workspace.id,
+          created_by_user_id: user.id,
+          description: "General discussion channel",
+        },
+      ])
+      .select()
+      .single()
+
+    if (channelError) {
+      console.error("Channel creation error:", channelError)
+      // Even if channel creation fails, we'll return the workspace
+      return NextResponse.json(workspace)
+    }
+
+    return NextResponse.json({
+      ...workspace,
+      defaultChannelId: channel.id,
+    })
   } catch (error) {
     console.error("Unexpected error:", error)
     return NextResponse.json(

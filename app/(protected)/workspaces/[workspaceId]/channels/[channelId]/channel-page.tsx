@@ -123,7 +123,7 @@ export function ChannelPage({
   return (
     <div className="flex-1 flex flex-col">
       {/* Channel Header */}
-      <div className="border-b flex items-center h-[60px] px-4">
+      <div className="h-[60px] border-b flex items-center px-4">
         <Hash className="mr-2 h-5 w-5" />
         <h2 className="font-semibold text-lg">{channel.name}</h2>
       </div>

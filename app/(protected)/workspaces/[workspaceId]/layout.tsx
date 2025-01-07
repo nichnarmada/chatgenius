@@ -1,20 +1,11 @@
-import { getWorkspaceData } from "./workspace-data"
-import { WorkspaceLayout } from "./workspace-layout"
+import LayoutWrapper from "./layout-wrapper"
 
-interface LayoutProps {
+export default function Layout({
+  children,
+  params,
+}: {
   children: React.ReactNode
-  params: {
-    workspaceId: string
-  }
-}
-
-export default async function Layout({ children, params }: LayoutProps) {
-  const { workspaceId } = await Promise.resolve(params)
-  const data = await getWorkspaceData(workspaceId)
-
-  return (
-    <WorkspaceLayout {...data} workspaceId={workspaceId}>
-      {children}
-    </WorkspaceLayout>
-  )
+  params: { workspaceId: string }
+}) {
+  return <LayoutWrapper params={params}>{children}</LayoutWrapper>
 }
