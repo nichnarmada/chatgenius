@@ -4,21 +4,16 @@ import { encodedRedirect } from "@/utils/utils"
 import { createClient } from "@/utils/supabase/server"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
+import { createUserProfile } from "@/app/auth/sign-up/create-profile"
 
-export const signUpAction = async (formData: FormData) => {
-  const email = formData.get("email")?.toString()
-  const password = formData.get("password")?.toString()
-  const name = formData.get("name")?.toString()
+export async function signUpAction(formData: FormData) {
+  const headersList = headers()
+  const origin = headersList.get("origin")
+  const email = formData.get("email") as string
+  const password = formData.get("password") as string
+  const name = formData.get("name") as string
+
   const supabase = await createClient()
-  const origin = (await headers()).get("origin")
-
-  if (!email || !password || !name) {
-    return encodedRedirect(
-      "error",
-      "/sign-up",
-      "Name, email and password are required"
-    )
-  }
 
   const { error } = await supabase.auth.signUp({
     email,
@@ -32,15 +27,22 @@ export const signUpAction = async (formData: FormData) => {
   })
 
   if (error) {
-    console.error(error.code + " " + error.message)
-    return encodedRedirect("error", "/sign-up", error.message)
+    return redirect("/sign-up?message=Could not authenticate user")
   }
 
-  return encodedRedirect(
-    "success",
-    "/sign-up",
-    "Thanks for signing up! Please check your email for a verification link."
-  )
+  try {
+    // Create profile for the new user
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (user) {
+      await createUserProfile(user.id, email, name)
+    }
+  } catch (error) {
+    console.error("Error creating profile:", error)
+  }
+
+  return redirect("/sign-up?message=Check email to continue sign in process")
 }
 
 export const signInAction = async (formData: FormData) => {
