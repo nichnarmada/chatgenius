@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server"
 import { redirect } from "next/navigation"
 import { WorkspacesList } from "./workspaces-list"
+import { Toaster } from "@/components/ui/toaster"
 
 export default async function WorkspacesPage() {
   const supabase = await createClient()
@@ -13,6 +14,13 @@ export default async function WorkspacesPage() {
   if (userError || !user) {
     redirect("/login")
   }
+
+  // Get user profile
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .single()
 
   // Get all workspaces
   const { data: allWorkspaces, error: workspacesError } = await supabase
@@ -32,11 +40,19 @@ export default async function WorkspacesPage() {
     )
     .order("created_at", { ascending: false })
 
-  if (workspacesError) {
-    console.error("Error fetching workspaces:", workspacesError)
-  }
+  // Collect all errors
+  const error = workspacesError?.message || profileError?.message
 
   return (
-    <WorkspacesList initialWorkspaces={allWorkspaces || []} userId={user.id} />
+    <>
+      <WorkspacesList
+        initialWorkspaces={allWorkspaces || []}
+        userId={user.id}
+        user={user}
+        profile={profile}
+        error={error}
+      />
+      <Toaster />
+    </>
   )
 }

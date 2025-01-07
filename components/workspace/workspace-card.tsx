@@ -54,18 +54,21 @@ export function WorkspaceCard({
 }: WorkspaceCardProps) {
   const [showJoinModal, setShowJoinModal] = useState(false)
 
-  const handleJoinClick = (e: React.MouseEvent) => {
-    e.preventDefault() // Prevent navigation
-    setShowJoinModal(true)
+  const handleClick = (e: React.MouseEvent) => {
+    // If it's a discoverable workspace (showJoin is true and not a member)
+    if (showJoin && !workspace.isMember) {
+      e.preventDefault() // Prevent navigation
+      setShowJoinModal(true)
+    }
   }
 
   const isOwner = workspace.userRole === "owner"
 
   return (
     <>
-      <Link
-        href={href}
-        className="group aspect-square rounded-xl flex flex-col items-center justify-center p-4 transition-all duration-300 hover:shadow-lg relative bg-white"
+      <div
+        onClick={handleClick}
+        className="group aspect-square rounded-xl flex flex-col items-center justify-center p-4 transition-all duration-300 hover:shadow-lg relative bg-white cursor-pointer"
       >
         <div className="relative w-full h-3/4 mb-2">
           {workspace.image_url ? (
@@ -95,19 +98,7 @@ export function WorkspaceCard({
           <Users size={16} className="mr-1" />
           <span>{workspace.memberCount}</span>
         </div>
-        {showJoin && (
-          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-8 w-8 rounded-full"
-              onClick={handleJoinClick}
-            >
-              <UserPlus className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
-      </Link>
+      </div>
 
       <JoinWorkspaceModal
         isOpen={showJoinModal}

@@ -7,15 +7,19 @@ import { redirect } from "next/navigation"
 import { createUserProfile } from "@/app/auth/sign-up/create-profile"
 
 export async function signUpAction(formData: FormData) {
-  const headersList = headers()
+  const headersList = await headers()
   const origin = headersList.get("origin")
   const email = formData.get("email") as string
   const password = formData.get("password") as string
   const name = formData.get("name") as string
 
+  if (!email || !password || !name) {
+    return encodedRedirect("error", "/sign-up", "All fields are required")
+  }
+
   const supabase = await createClient()
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -27,22 +31,40 @@ export async function signUpAction(formData: FormData) {
   })
 
   if (error) {
-    return redirect("/sign-up?message=Could not authenticate user")
+    console.error("Sign up error:", error)
+    return encodedRedirect("error", "/sign-up", error.message)
   }
 
-  try {
-    // Create profile for the new user
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (user) {
-      await createUserProfile(user.id, email, name)
+  if (data?.user) {
+    try {
+      await createUserProfile(data.user.id, email, name)
+
+      // Check if email confirmation is required
+      if (data.user.identities?.length === 0) {
+        return encodedRedirect(
+          "success",
+          "/sign-up",
+          "Please check your email to confirm your account."
+        )
+      } else {
+        // Email confirmation not required or already confirmed
+        return redirect("/workspaces")
+      }
+    } catch (error) {
+      console.error("Error creating profile:", error)
+      return encodedRedirect(
+        "error",
+        "/sign-up",
+        "Account created but there was an error setting up your profile"
+      )
     }
-  } catch (error) {
-    console.error("Error creating profile:", error)
   }
 
-  return redirect("/sign-up?message=Check email to continue sign in process")
+  return encodedRedirect(
+    "error",
+    "/sign-up",
+    "Something went wrong. Please try again."
+  )
 }
 
 export const signInAction = async (formData: FormData) => {
