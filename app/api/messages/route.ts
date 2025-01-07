@@ -76,14 +76,15 @@ export async function POST(request: Request) {
     }
 
     // Verify user has access to workspace
-    const { data: workspace, error: workspaceError } = await supabase
-      .from("workspaces")
-      .select("id")
-      .eq("id", channel.workspace_id)
-      .or(`created_by_user_id.eq.${user.id},members.cs.{${user.id}}`)
-      .single()
+    const { data: workspaceMember, error: workspaceMemberError } =
+      await supabase
+        .from("workspace_members")
+        .select("workspace_id")
+        .eq("workspace_id", channel.workspace_id)
+        .eq("user_id", user.id)
+        .single()
 
-    if (workspaceError || !workspace) {
+    if (workspaceMemberError || !workspaceMember) {
       return NextResponse.json(
         { error: "Access to workspace denied" },
         { status: 403 }
