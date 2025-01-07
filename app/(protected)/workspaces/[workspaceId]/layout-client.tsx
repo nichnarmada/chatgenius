@@ -3,7 +3,7 @@
 import { createClient } from "@/utils/supabase/client"
 import { redirect, useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Hash, Plus, LogOut, ChevronUp } from "lucide-react"
+import { Hash, Plus, LogOut, ChevronUp, UserPlus } from "lucide-react"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
 import {
@@ -16,6 +16,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { SignOutModal } from "@/components/modals/sign-out-modal"
 import { CreateChannelModal } from "@/components/modals/create-channel-modal"
+import { InviteModal } from "@/components/modals/invite-modal"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 
@@ -36,6 +37,7 @@ export function WorkspaceLayoutClient({
 }: WorkspaceLayoutClientProps) {
   const [showSignOutModal, setShowSignOutModal] = useState(false)
   const [isCreateChannelOpen, setIsCreateChannelOpen] = useState(false)
+  const [showInviteModal, setShowInviteModal] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
@@ -100,6 +102,18 @@ export function WorkspaceLayoutClient({
           </div>
         </div>
 
+        {/* Invite Users Button */}
+        <div className="px-4 py-2">
+          <Button
+            variant="outline"
+            className="w-full justify-start"
+            onClick={() => setShowInviteModal(true)}
+          >
+            <UserPlus className="mr-2 h-4 w-4" />
+            Invite Others
+          </Button>
+        </div>
+
         {/* User Profile Section */}
         <div className="p-4 border-t mt-auto">
           <DropdownMenu>
@@ -161,6 +175,13 @@ export function WorkspaceLayoutClient({
         onChannelCreated={(newChannel) => {
           router.refresh()
         }}
+      />
+
+      {/* Invite Modal */}
+      <InviteModal
+        isOpen={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        workspaceId={workspace.id}
       />
     </div>
   )
