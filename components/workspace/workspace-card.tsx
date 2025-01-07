@@ -66,39 +66,38 @@ export function WorkspaceCard({
 
   return (
     <>
-      <div
-        onClick={handleClick}
-        className="group aspect-square rounded-xl flex flex-col items-center justify-center p-4 transition-all duration-300 hover:shadow-lg relative bg-white cursor-pointer"
-      >
-        <div className="relative w-full h-3/4 mb-2">
-          {workspace.image_url ? (
-            <Image
-              src={workspace.image_url}
-              alt={workspace.name}
-              fill
-              className="rounded-lg object-cover group-hover:ring-2 group-hover:ring-blue-500 transition-all duration-300"
-            />
-          ) : (
-            <WorkspacePlaceholder name={workspace.name} />
-          )}
-          {isOwner && (
-            <div
-              className="absolute top-2 left-2 bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center"
-              title="You are the owner"
-            >
-              <Star size={12} className="mr-1" />
-              Owner
-            </div>
-          )}
+      <Link href={href} onClick={handleClick}>
+        <div className="group aspect-square rounded-xl flex flex-col items-center justify-center p-4 transition-all duration-300 hover:shadow-lg relative bg-white cursor-pointer">
+          <div className="relative w-full h-3/4 mb-2">
+            {workspace.image_url ? (
+              <Image
+                src={workspace.image_url}
+                alt={workspace.name}
+                fill
+                className="rounded-lg object-cover group-hover:ring-2 group-hover:ring-blue-500 transition-all duration-300"
+              />
+            ) : (
+              <WorkspacePlaceholder name={workspace.name} />
+            )}
+            {isOwner && (
+              <div
+                className="absolute top-2 left-2 bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center"
+                title="You are the owner"
+              >
+                <Star size={12} className="mr-1" />
+                Owner
+              </div>
+            )}
+          </div>
+          <span className="text-lg font-medium text-center mb-1">
+            {workspace.name}
+          </span>
+          <div className="flex items-center text-sm text-gray-500">
+            <Users size={16} className="mr-1" />
+            <span>{workspace.memberCount}</span>
+          </div>
         </div>
-        <span className="text-lg font-medium text-center mb-1">
-          {workspace.name}
-        </span>
-        <div className="flex items-center text-sm text-gray-500">
-          <Users size={16} className="mr-1" />
-          <span>{workspace.memberCount}</span>
-        </div>
-      </div>
+      </Link>
 
       <JoinWorkspaceModal
         isOpen={showJoinModal}
