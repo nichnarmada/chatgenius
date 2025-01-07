@@ -58,7 +58,7 @@
 
 #### **Pages**
 
-1. `/` - Landing page with login/signup handled by Clerk.
+1. `/` - Landing page with login/signup handled by Supabase auth.
 2. `/workspaces` - Dashboard displaying workspaces the user is part of.
 3. `/workspaces/:workspaceId` - Workspace home showing available channels and DMs.
 4. `/workspaces/:workspaceId/channels/:channelId` - Channel view with real-time messages and file uploads.
@@ -82,7 +82,7 @@
 
 #### **Authentication Middleware**
 
-1. Verify user session with Clerk on each API request to restrict access to authenticated users.
+1. Verify user session with Supabase auth on each API request to restrict access to authenticated users.
 
 #### **Authorization Middleware**
 

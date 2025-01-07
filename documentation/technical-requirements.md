@@ -26,7 +26,7 @@
 
 #### **Core Functionality Requirements**
 
-1. Store user data in the **User** model using Clerk for authentication.
+1. Store user data in the **User** model using supabase auth for authentication.
 2. Allow workspace creation, storing details in the **Workspace** model and linking to the creator’s `user_id`.
 3. Enable users to create/join channels, storing details in the **Channel** model.
 4. Allow real-time messaging via **Supabase** real-time features, storing messages in the **Message** model linked to a `Channel` or `DirectMessage`.
@@ -34,10 +34,10 @@
 
 ---
 
-#### **Authorization Requirements (Clerk Integration)**
+#### **Authorization Requirements (Supabase auth Integration)**
 
-1. Authenticate users with Clerk to ensure only registered users access ChatGenius.
-2. Restrict workspace creation to authenticated users by validating their Clerk `user_id`.
+1. Authenticate users with supabase auth to ensure only registered users access ChatGenius.
+2. Restrict workspace creation to authenticated users by validating their supabase auth `user_id`.
 3. Allow only workspace members to access associated channels and messages.
 4. Ensure private channels require specific user permissions to join or view messages.
 
@@ -63,7 +63,7 @@
 
 ---
 
-#### **Authorization Requirements (Clerk Integration)**
+#### **Authorization Requirements (Supabase auth Integration)**
 
 1. Restrict file uploads to authenticated users and ensure permissions align with channel or DM access rules.
 2. Allow search only within channels or DMs the user is authorized to access.
@@ -90,7 +90,7 @@
 
 ---
 
-#### **Authorization Requirements (Clerk Integration)**
+#### **Authorization Requirements (Supabase auth Integration)**
 
 1. Ensure only users with access to a channel or DM can view or participate in threads.
 2. Allow emoji reactions only from users who can view the parent message.
