@@ -3,7 +3,14 @@
 import { createClient } from "@/utils/supabase/client"
 import { redirect, useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Hash, Plus, LogOut, ChevronUp, UserPlus } from "lucide-react"
+import {
+  Hash,
+  Plus,
+  LogOut,
+  ChevronUp,
+  UserPlus,
+  MessageSquare,
+} from "lucide-react"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
 import {
@@ -19,6 +26,14 @@ import { CreateChannelModal } from "@/components/modals/create-channel-modal"
 import { InviteModal } from "@/components/modals/invite-modal"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
+import { ScrollArea } from "@/components/ui/scroll-area"
+
+interface WorkspaceUser {
+  id: string
+  email: string
+  display_name: string
+  avatar_url?: string
+}
 
 interface WorkspaceLayoutClientProps {
   children: React.ReactNode
@@ -26,6 +41,7 @@ interface WorkspaceLayoutClientProps {
   channels: any[]
   user: any
   profile: any
+  workspaceUsers: WorkspaceUser[]
 }
 
 export function WorkspaceLayoutClient({
@@ -34,6 +50,7 @@ export function WorkspaceLayoutClient({
   channels,
   user,
   profile,
+  workspaceUsers,
 }: WorkspaceLayoutClientProps) {
   const [showSignOutModal, setShowSignOutModal] = useState(false)
   const [isCreateChannelOpen, setIsCreateChannelOpen] = useState(false)
@@ -41,6 +58,13 @@ export function WorkspaceLayoutClient({
   const router = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
+
+  console.log("Current user:", user)
+  console.log("All workspace users:", workspaceUsers)
+  console.log(
+    "Filtered workspace users:",
+    workspaceUsers.filter((workspaceUser) => workspaceUser.id !== user.id)
+  )
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -98,7 +122,37 @@ export function WorkspaceLayoutClient({
             <h2 className="text-sm font-semibold text-muted-foreground mb-2">
               DIRECT MESSAGES
             </h2>
-            {/* Direct messages will go here */}
+            <ScrollArea className="h-[200px]">
+              <div className="space-y-1">
+                {workspaceUsers
+                  .filter((workspaceUser) => workspaceUser.id !== user.id)
+                  .map((workspaceUser) => (
+                    <Button
+                      key={workspaceUser.id}
+                      variant="ghost"
+                      className="w-full justify-start hover:bg-muted-foreground/10"
+                      asChild
+                    >
+                      <Link
+                        href={`/workspaces/${workspace.id}/dm/${workspaceUser.id}`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-5 w-5">
+                            <AvatarImage src={workspaceUser.avatar_url} />
+                            <AvatarFallback>
+                              {workspaceUser.display_name?.charAt(0) ||
+                                workspaceUser.email?.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="truncate">
+                            {workspaceUser.display_name || workspaceUser.email}
+                          </span>
+                        </div>
+                      </Link>
+                    </Button>
+                  ))}
+              </div>
+            </ScrollArea>
           </div>
         </div>
 

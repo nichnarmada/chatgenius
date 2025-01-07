@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Hash, Send } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { createClient } from "@/utils/supabase/client"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 interface Message {
   id: string
@@ -17,6 +18,7 @@ interface Message {
     id: string
     email: string
     display_name: string
+    avatar_url?: string
   }
 }
 
@@ -130,18 +132,30 @@ export function ChannelPage({
 
       {/* Messages */}
       <ScrollArea ref={scrollRef} className="flex-grow p-4">
-        <div className="space-y-4">
+        <div className="space-y-6">
           {messages.map((msg) => (
-            <div key={msg.id}>
-              <div className="flex items-baseline gap-2">
-                <span className="font-semibold">
-                  {msg.profile?.display_name}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {new Date(msg.created_at).toLocaleTimeString()}
-                </span>
+            <div key={msg.id} className="flex items-start gap-4">
+              <Avatar className="h-8 w-8 mt-1">
+                <AvatarImage src={msg.profile?.avatar_url} />
+                <AvatarFallback>
+                  {msg.profile?.display_name?.charAt(0) ||
+                    msg.profile?.email?.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <div className="flex items-baseline gap-2">
+                  <span className="font-semibold text-sm">
+                    {msg.profile?.display_name}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(msg.created_at).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                </div>
+                <div className="mt-1 text-sm">{msg.content}</div>
               </div>
-              <div className="mt-1">{msg.content}</div>
             </div>
           ))}
         </div>
