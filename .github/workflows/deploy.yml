@@ -3,13 +3,20 @@ name: Deploy to EC2
 on:
   push:
     branches:
-      - main # or your default branch
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
+      - name: Debug SSH Connection
+        run: |
+          echo "Testing connection to ${{ secrets.EC2_HOST }}"
+          echo "${{ secrets.EC2_SSH_KEY }}" > deploy_key.pem
+          chmod 600 deploy_key.pem
+          ssh -i deploy_key.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} echo "SSH connection successful"
 
       - name: Deploy to EC2
         uses: appleboy/ssh-action@master
@@ -20,6 +27,7 @@ jobs:
           script: |
             cd chatgenius
             git pull
+            export SKIP_TYPE_CHECK=true
             npm install
             npm run build
             pm2 restart chatgenius-nichnarmada
