@@ -1,16 +1,16 @@
-import { getDMData } from "./dm-data"
 import { DMPage } from "./dm-page"
+import { getDMData } from "./dm-data"
 
-interface PageProps {
-  params: {
-    workspaceId: string
-    userId: string
-  }
+type PageProps = {
+  params: Promise<{ workspaceId: string; userId: string }>
 }
 
 export default async function Page({ params }: PageProps) {
-  const { workspaceId, userId } = await Promise.resolve(params)
-  const data = await getDMData(workspaceId, userId)
+  const resolvedParams = await params
+  const data = await getDMData(
+    resolvedParams.workspaceId,
+    resolvedParams.userId
+  )
 
   return <DMPage {...data} />
 }

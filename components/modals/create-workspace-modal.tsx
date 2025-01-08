@@ -10,14 +10,19 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Plus } from "lucide-react"
 
-export function CreateWorkspaceModal() {
-  const [open, setOpen] = useState(false)
+interface CreateWorkspaceModalProps {
+  isOpen: boolean
+  onClose: () => void
+}
+
+export function CreateWorkspaceModal({
+  isOpen,
+  onClose,
+}: CreateWorkspaceModalProps) {
   const [name, setName] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
@@ -43,7 +48,7 @@ export function CreateWorkspaceModal() {
       }
 
       // Close modal and redirect to the default channel
-      setOpen(false)
+      onClose()
       if (data.defaultChannelId) {
         router.push(`/workspaces/${data.id}/channels/${data.defaultChannelId}`)
       } else {
@@ -60,13 +65,7 @@ export function CreateWorkspaceModal() {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          New Workspace
-        </Button>
-      </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
@@ -87,11 +86,7 @@ export function CreateWorkspaceModal() {
             </div>
           </div>
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
-            >
+            <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>

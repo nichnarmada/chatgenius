@@ -1,16 +1,40 @@
-import { getChannelData } from "./channel-data"
+import { createClient } from "@/utils/supabase/server"
 import { ChannelPage } from "./channel-page"
+import { redirect } from "next/navigation"
 
-interface PageProps {
-  params: {
-    workspaceId: string
-    channelId: string
-  }
+type PageProps = {
+  params: Promise<{ workspaceId: string; channelId: string }>
 }
 
 export default async function Page({ params }: PageProps) {
-  const { workspaceId, channelId } = await Promise.resolve(params)
-  const data = await getChannelData(workspaceId, channelId)
+  const resolvedParams = await params
+  const supabase = await createClient()
 
-  return <ChannelPage {...data} />
+  const { data: channel, error: channelError } = await supabase
+    .from("channels")
+    .select("*")
+    .eq("id", resolvedParams.channelId)
+    .single()
+
+  if (channelError || !channel) {
+    redirect("/")
+  }
+
+  const { data: messages } = await supabase
+    .from("messages")
+    .select(
+      `
+      *,
+      profile:user_id (
+        id,
+        email,
+        display_name,
+        avatar_url
+      )
+    `
+    )
+    .eq("channel_id", resolvedParams.channelId)
+    .order("created_at", { ascending: true })
+
+  return <ChannelPage channel={channel} messages={messages || []} />
 }

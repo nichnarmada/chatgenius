@@ -1,9 +1,10 @@
 import { createClient } from "@/utils/supabase/server"
 import { NextResponse } from "next/server"
 
-export async function POST(req: Request) {
+export async function GET(request: Request) {
   try {
-    const { token } = await req.json()
+    const { searchParams } = new URL(request.url)
+    const token = searchParams.get("token")
 
     if (!token) {
       return NextResponse.json({ error: "Token is required" }, { status: 400 })
@@ -11,16 +12,13 @@ export async function POST(req: Request) {
 
     const supabase = await createClient()
 
-    // Get invite details including email
-    const { data: invite, error } = await supabase
+    // Get invite details
+    const { data: invite, error: inviteError } = await supabase
       .from("workspace_invites")
       .select(
         `
-        workspace_id,
-        email,
-        created_at,
-        active,
-        workspaces (
+        *,
+        workspaces:workspace_id (
           name
         )
       `
@@ -28,34 +26,29 @@ export async function POST(req: Request) {
       .eq("token", token)
       .single()
 
-    if (error) {
-      console.error("Error looking up invite:", error)
+    if (inviteError) {
       return NextResponse.json(
-        { error: "Failed to lookup invite" },
-        { status: 500 }
-      )
-    }
-
-    if (!invite || !invite.active) {
-      return NextResponse.json(
-        { error: "Invite not found or expired" },
+        { error: "Invalid or expired invite" },
         { status: 404 }
       )
     }
 
-    // Check if invite is expired (24 hours)
-    const created = new Date(invite.created_at)
-    const now = new Date()
-    const isExpired = now.getTime() - created.getTime() > 24 * 60 * 60 * 1000
+    if (!invite) {
+      return NextResponse.json({ error: "Invite not found" }, { status: 404 })
+    }
 
-    if (isExpired) {
-      // Update invite to inactive
-      await supabase
-        .from("workspace_invites")
-        .update({ active: false })
-        .eq("token", token)
+    // Check if invite is expired
+    const expiresAt = new Date(invite.expires_at)
+    if (expiresAt < new Date()) {
+      return NextResponse.json({ error: "Invite has expired" }, { status: 410 })
+    }
 
-      return NextResponse.json({ error: "Invite has expired" }, { status: 400 })
+    // Check if invite has been accepted
+    if (invite.accepted_at) {
+      return NextResponse.json(
+        { error: "Invite has already been accepted" },
+        { status: 410 }
+      )
     }
 
     return NextResponse.json({
@@ -65,7 +58,7 @@ export async function POST(req: Request) {
       active: true,
     })
   } catch (error) {
-    console.error("Error in lookup invite API:", error)
+    console.error("Error in invite lookup:", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
