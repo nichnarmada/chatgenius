@@ -15,10 +15,11 @@
     "@radix-ui/react-scroll-area": "^1.2.2",
     "@radix-ui/react-slot": "^1.1.1",
     "@radix-ui/react-toast": "^1.2.4",
-    "@supabase/ssr": "latest",
+    "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "latest",
     "autoprefixer": "10.4.20",
     "class-variance-authority": "^0.7.0",
+    "cloudinary": "^2.5.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.468.0",
     "next": "latest",
@@ -26,7 +27,9 @@
     "prettier": "^3.3.3",
     "react": "19.0.0",
     "react-dom": "19.0.0",
-    "resend": "^4.0.1"
+    "resend": "^4.0.1",
+    "sharp": "^0.33.5",
+    "typesense": "^1.8.2"
   },
   "devDependencies": {
     "@types/node": "22.10.2",

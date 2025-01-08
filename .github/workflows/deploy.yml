@@ -46,24 +46,33 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
+          script_stop: true
+          debug: true
+          command_timeout: "30m"
+          retries: 3
+          sleep: 5s
+          timeout: 60s
+          envs: GITHUB_SHA
           script: |
+            echo "Starting deployment..."
             cd chatgenius
+            echo "Pulling latest changes..."
             git pull
             export SKIP_TYPE_CHECK=1
             export NODE_ENV=production
 
-            # Install dependencies without dev dependencies
+            echo "Installing dependencies..."
             npm ci --only=production
 
-            # Build without type checking
+            echo "Building application..."
             NEXT_SKIP_TYPECHECK=1 npm run build
 
-            # Restart PM2 with error handling
+            echo "Restarting PM2..."
             if pm2 restart chatgenius-nichnarmada; then
               echo "PM2 restart successful"
             else
-              echo "PM2 restart failed"
-              pm2 delete chatgenius-nichnarmada
+              echo "PM2 restart failed, attempting fresh start..."
+              pm2 delete chatgenius-nichnarmada || true
               pm2 start npm --name "chatgenius-nichnarmada" -- start
               pm2 save
             fi

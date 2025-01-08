@@ -24,6 +24,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { SignOutModal } from "@/components/modals/sign-out-modal"
 import { CreateChannelModal } from "@/components/modals/create-channel-modal"
 import { InviteModal } from "@/components/modals/invite-modal"
+import { ProfileSettingsModal } from "@/components/modals/profile-settings-modal"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -55,6 +56,7 @@ export function WorkspaceLayoutClient({
   const [showSignOutModal, setShowSignOutModal] = useState(false)
   const [isCreateChannelOpen, setIsCreateChannelOpen] = useState(false)
   const [showInviteModal, setShowInviteModal] = useState(false)
+  const [showProfileModal, setShowProfileModal] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
@@ -168,7 +170,7 @@ export function WorkspaceLayoutClient({
               <Button variant="ghost" className="w-full justify-start p-2">
                 <div className="flex items-center gap-2">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.user_metadata?.avatar_url} />
+                    <AvatarImage src={profile?.avatar_url} />
                     <AvatarFallback>
                       {profile?.display_name?.charAt(0) ||
                         user.email?.charAt(0)}
@@ -184,6 +186,9 @@ export function WorkspaceLayoutClient({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onSelect={() => setShowProfileModal(true)}>
+                Profile Settings
+              </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link href="/workspaces" className="cursor-pointer">
                   Switch Workspace
@@ -207,14 +212,13 @@ export function WorkspaceLayoutClient({
       {/* Main Content */}
       <div className="flex-1 flex flex-col">{children}</div>
 
-      {/* Sign Out Modal */}
+      {/* Modals */}
       <SignOutModal
         open={showSignOutModal}
         onOpenChange={setShowSignOutModal}
         onConfirm={handleSignOut}
       />
 
-      {/* Create Channel Modal */}
       <CreateChannelModal
         isOpen={isCreateChannelOpen}
         onClose={() => setIsCreateChannelOpen(false)}
@@ -224,11 +228,17 @@ export function WorkspaceLayoutClient({
         }}
       />
 
-      {/* Invite Modal */}
       <InviteModal
         isOpen={showInviteModal}
         onClose={() => setShowInviteModal(false)}
         workspaceId={workspace.id}
+      />
+
+      <ProfileSettingsModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        user={user}
+        profile={profile}
       />
     </div>
   )
