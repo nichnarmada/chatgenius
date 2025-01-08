@@ -58,13 +58,13 @@ jobs:
             cd chatgenius
             echo "Pulling latest changes..."
             git pull
-            export SKIP_TYPE_CHECK=1
-            export NODE_ENV=production
 
             echo "Installing dependencies..."
+            export NODE_ENV=development
             npm ci
 
             echo "Building application..."
+            export NODE_ENV=production
             npm run build
 
             echo "Restarting PM2..."
