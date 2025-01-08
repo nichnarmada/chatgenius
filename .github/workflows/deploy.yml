@@ -62,17 +62,17 @@ jobs:
             export NODE_ENV=production
 
             echo "Installing dependencies..."
-            npm ci --only=production
+            npm ci
 
             echo "Building application..."
-            NEXT_SKIP_TYPECHECK=1 npm run build
+            npm run build
 
             echo "Restarting PM2..."
             if pm2 restart chatgenius-nichnarmada; then
               echo "PM2 restart successful"
             else
               echo "PM2 restart failed, attempting fresh start..."
-              pm2 delete chatgenius-nichnarmada || true
+              pm2 delete all || true
               pm2 start npm --name "chatgenius-nichnarmada" -- start
               pm2 save
             fi
