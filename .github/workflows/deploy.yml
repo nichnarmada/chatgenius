@@ -6,17 +6,41 @@ on:
       - main
 
 jobs:
-  deploy:
+  build-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
 
-      - name: Debug SSH Connection
-        run: |
-          echo "Testing connection to ${{ secrets.EC2_HOST }}"
-          echo "${{ secrets.EC2_SSH_KEY }}" > deploy_key.pem
-          chmod 600 deploy_key.pem
-          ssh -i deploy_key.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} echo "SSH connection successful"
+      # Add npm cache
+      - name: Cache npm dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "18"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Test
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NEXT_PUBLIC_BASE_URL: ${{ secrets.PRODUCTION_URL }}
+
+  deploy:
+    needs: build-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
 
       - name: Deploy to EC2
         uses: appleboy/ssh-action@master
@@ -27,7 +51,22 @@ jobs:
           script: |
             cd chatgenius
             git pull
-            export SKIP_TYPE_CHECK=true
-            npm install
+
+            # Load environment variables
+            set -a
+            source .env.production
+            set +a
+
+            # Install dependencies with caching
+            npm ci
+
+            # Build with production environment
             npm run build
-            pm2 restart chatgenius-nichnarmada
+
+            # Restart PM2 with error handling
+            if pm2 restart chatgenius-nichnarmada; then
+              echo "PM2 restart successful"
+            else
+              echo "PM2 restart failed"
+              exit 1
+            fi
