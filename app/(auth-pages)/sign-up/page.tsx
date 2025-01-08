@@ -1,5 +1,3 @@
-"use client"
-
 import { signUpAction } from "@/app/actions"
 import { FormMessage, Message } from "@/components/form-message"
 import { SignUpForm } from "./sign-up-form"
@@ -10,7 +8,6 @@ type SearchParamsProps = {
 }
 
 export default async function SignUp({ searchParams }: SearchParamsProps) {
-  // Await the searchParams promise
   const params = await searchParams
 
   // Convert searchParams to Message type

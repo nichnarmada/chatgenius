@@ -18,27 +18,13 @@ export function SignUpForm({ messageParams }: SignUpFormProps) {
   const { toast } = useToast()
 
   useEffect(() => {
-    if ("success" in messageParams) {
+    if ("error" in messageParams) {
       toast({
-        title: "Success",
-        description: messageParams.success,
-      })
-    } else if ("error" in messageParams) {
-      toast({
-        variant: "destructive",
         title: "Error",
         description: messageParams.error,
       })
     }
   }, [messageParams, toast])
-
-  if ("message" in messageParams) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <FormMessage message={messageParams} />
-      </div>
-    )
-  }
 
   return (
     <>
