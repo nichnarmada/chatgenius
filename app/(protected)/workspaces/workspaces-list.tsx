@@ -38,6 +38,7 @@ interface WorkspacesListProps {
   user: any
   profile: any
   error?: string
+  success?: string
 }
 
 function NewWorkspaceCard() {
@@ -63,6 +64,7 @@ export function WorkspacesList({
   user,
   profile,
   error,
+  success,
 }: WorkspacesListProps) {
   const [showSignOutModal, setShowSignOutModal] = useState(false)
   const router = useRouter()
@@ -79,6 +81,16 @@ export function WorkspacesList({
       })
     }
   }, [error, toast])
+
+  // Show success toast if there's a success message
+  useEffect(() => {
+    if (success) {
+      toast({
+        title: "Success",
+        description: success,
+      })
+    }
+  }, [success, toast])
 
   const handleSignOut = async () => {
     try {

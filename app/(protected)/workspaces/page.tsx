@@ -3,8 +3,13 @@ import { redirect } from "next/navigation"
 import { WorkspacesList } from "./workspaces-list"
 import { Toaster } from "@/components/ui/toaster"
 
-export default async function WorkspacesPage() {
+interface PageProps {
+  searchParams: { [key: string]: string | string[] | undefined }
+}
+
+export default async function WorkspacesPage({ searchParams }: PageProps) {
   const supabase = await createClient()
+  const { success } = await searchParams
 
   const {
     data: { user },
@@ -51,6 +56,7 @@ export default async function WorkspacesPage() {
         user={user}
         profile={profile}
         error={error}
+        success={success as string | undefined}
       />
       <Toaster />
     </>
