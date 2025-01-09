@@ -162,8 +162,8 @@ export function ChannelPage({
       </ScrollArea>
 
       {/* Message Input */}
-      <div className="p-4 border-t">
-        <form onSubmit={handleSubmit} className="flex items-center">
+      <div className="h-[60px] border-t flex items-center px-4">
+        <form onSubmit={handleSubmit} className="flex items-center w-full">
           <Input
             value={content}
             onChange={(e) => setContent(e.target.value)}

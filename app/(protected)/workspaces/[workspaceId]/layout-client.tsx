@@ -8,9 +8,13 @@ import {
   Hash,
   Plus,
   LogOut,
+  ChevronDown,
   ChevronUp,
   UserPlus,
   MessageSquare,
+  Settings,
+  ArrowLeftRight,
+  DoorOpen,
 } from "lucide-react"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -26,6 +30,7 @@ import { SignOutModal } from "@/components/modals/sign-out-modal"
 import { CreateChannelModal } from "@/components/modals/create-channel-modal"
 import { InviteModal } from "@/components/modals/invite-modal"
 import { ProfileSettingsModal } from "@/components/modals/profile-settings-modal"
+import { WorkspaceSettingsModal } from "@/components/modals/workspace-settings-modal"
 import { cn } from "@/lib/utils"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import Image from "next/image"
@@ -94,6 +99,8 @@ export function WorkspaceLayoutClient({
   const [isCreateChannelOpen, setIsCreateChannelOpen] = useState(false)
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [showProfileModal, setShowProfileModal] = useState(false)
+  const [showWorkspaceSettingsModal, setShowWorkspaceSettingsModal] =
+    useState(false)
   const router = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
@@ -108,22 +115,63 @@ export function WorkspaceLayoutClient({
       {/* Sidebar */}
       <div className="w-64 bg-muted flex flex-col">
         {/* Workspace Name */}
-        <div className="h-[60px] flex items-center gap-3 px-4 border-b">
-          <div className="relative h-8 w-8">
-            {workspace.image_url ? (
-              <div className="relative w-full h-full rounded-full overflow-hidden">
-                <Image
-                  src={workspace.image_url}
-                  alt={workspace.name}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-            ) : (
-              <WorkspacePlaceholder name={workspace.name} />
-            )}
-          </div>
-          <h1 className="font-semibold text-lg">{workspace.name}</h1>
+        <div className="h-[60px] border-b">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className="w-full h-full px-4 justify-start"
+              >
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center gap-3">
+                    <div className="relative h-8 w-8">
+                      {workspace.image_url ? (
+                        <div className="relative w-full h-full rounded-full overflow-hidden">
+                          <Image
+                            src={workspace.image_url}
+                            alt={workspace.name}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <WorkspacePlaceholder name={workspace.name} />
+                      )}
+                    </div>
+                    <h1 className="font-semibold text-lg">{workspace.name}</h1>
+                  </div>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center" className="w-56">
+              <DropdownMenuItem
+                onSelect={() => setShowWorkspaceSettingsModal(true)}
+              >
+                <div className="flex items-center w-full">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Workspace Settings
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/workspaces" className="cursor-pointer">
+                  <div className="flex items-center w-full">
+                    <ArrowLeftRight className="mr-2 h-4 w-4" />
+                    Switch Workspace
+                  </div>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/workspaces" className="cursor-pointer">
+                  <div className="flex items-center w-full text-destructive">
+                    <DoorOpen className="mr-2 h-4 w-4" />
+                    Leave Workspace
+                  </div>
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Channels Section */}
@@ -215,42 +263,45 @@ export function WorkspaceLayoutClient({
         </div>
 
         {/* User Profile Section */}
-        <div className="p-4 border-t mt-auto">
+        <div className="mt-auto">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="w-full justify-start p-2">
-                <div className="flex items-center gap-2">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={profile?.avatar_url} />
-                    <AvatarFallback>
-                      {profile?.display_name?.charAt(0) ||
-                        user.email?.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 overflow-hidden">
-                    <p className="text-sm font-medium truncate">
-                      {profile?.display_name || user.email}
-                    </p>
+              <Button
+                variant="ghost"
+                className="w-full px-4 justify-start h-[60px] border-t"
+              >
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center gap-2">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={profile?.avatar_url} />
+                      <AvatarFallback>
+                        {profile?.display_name?.[0]?.toUpperCase() ||
+                          user?.email?.[0]?.toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col items-start">
+                      <span className="font-medium">
+                        {profile?.display_name || user?.email}
+                      </span>
+                    </div>
                   </div>
                   <ChevronUp className="h-4 w-4 text-muted-foreground" />
                 </div>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="center" className="w-56">
               <DropdownMenuItem onSelect={() => setShowProfileModal(true)}>
-                Profile Settings
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/workspaces" className="cursor-pointer">
-                  Switch Workspace
-                </Link>
+                <div className="flex items-center w-full">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Profile Settings
+                </div>
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <ThemeToggle />
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={() => setShowSignOutModal(true)}>
-                <div className="flex items-center w-full">
+                <div className="flex items-center w-full text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
                   Log out
                 </div>
@@ -290,6 +341,12 @@ export function WorkspaceLayoutClient({
         onClose={() => setShowProfileModal(false)}
         user={user}
         profile={profile}
+      />
+
+      <WorkspaceSettingsModal
+        isOpen={showWorkspaceSettingsModal}
+        onClose={() => setShowWorkspaceSettingsModal(false)}
+        workspace={workspace}
       />
     </div>
   )
