@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { createClient } from "@/utils/supabase/client"
 import { redirect, useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -25,9 +26,9 @@ import { SignOutModal } from "@/components/modals/sign-out-modal"
 import { CreateChannelModal } from "@/components/modals/create-channel-modal"
 import { InviteModal } from "@/components/modals/invite-modal"
 import { ProfileSettingsModal } from "@/components/modals/profile-settings-modal"
-import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import Image from "next/image"
 
 interface WorkspaceUser {
   id: string
@@ -36,13 +37,49 @@ interface WorkspaceUser {
   avatar_url?: string
 }
 
+interface Workspace {
+  id: string
+  name: string
+  image_url: string | null
+}
+
 interface WorkspaceLayoutClientProps {
   children: React.ReactNode
-  workspace: any
+  workspace: Workspace
   channels: any[]
   user: any
   profile: any
   workspaceUsers: WorkspaceUser[]
+}
+
+interface WorkspacePlaceholderProps {
+  name: string
+}
+
+function WorkspacePlaceholder({ name }: WorkspacePlaceholderProps) {
+  const initial = name.charAt(0).toUpperCase()
+
+  // Color classes with background colors and text colors
+  const colors = [
+    "bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-300",
+    "bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-300",
+    "bg-purple-100 text-purple-600 dark:bg-purple-900/50 dark:text-purple-300",
+    "bg-yellow-100 text-yellow-600 dark:bg-yellow-900/50 dark:text-yellow-300",
+    "bg-pink-100 text-pink-600 dark:bg-pink-900/50 dark:text-pink-300",
+    "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-300",
+  ]
+  const colorIndex =
+    name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) %
+    colors.length
+  const colorClass = colors[colorIndex]
+
+  return (
+    <div
+      className={`w-full h-full rounded-full ${colorClass} flex items-center justify-center border-2 border-transparent`}
+    >
+      <span className="text-xl font-bold">{initial}</span>
+    </div>
+  )
 }
 
 export function WorkspaceLayoutClient({
@@ -71,7 +108,21 @@ export function WorkspaceLayoutClient({
       {/* Sidebar */}
       <div className="w-64 bg-muted flex flex-col">
         {/* Workspace Name */}
-        <div className="h-[60px] flex items-center px-4 border-b">
+        <div className="h-[60px] flex items-center gap-3 px-4 border-b">
+          <div className="relative h-8 w-8">
+            {workspace.image_url ? (
+              <div className="relative w-full h-full rounded-full overflow-hidden">
+                <Image
+                  src={workspace.image_url}
+                  alt={workspace.name}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            ) : (
+              <WorkspacePlaceholder name={workspace.name} />
+            )}
+          </div>
           <h1 className="font-semibold text-lg">{workspace.name}</h1>
         </div>
 
