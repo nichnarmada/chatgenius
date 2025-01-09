@@ -153,7 +153,7 @@ export function Message({
       <div className="group relative flex gap-3 px-4 py-2 hover:bg-muted/50">
         {/* Reaction and Action Buttons */}
         <div className="absolute right-2 -top-3 flex items-center gap-0.5 transition-opacity duration-200 bg-background shadow-sm rounded-md border z-10 opacity-0 group-hover:opacity-100">
-          {/* Thread Button */}
+          {/* Thread Button - For creating new threads */}
           {showThread && (
             <Button
               variant="ghost"
@@ -161,12 +161,7 @@ export function Message({
               className="h-7 px-2"
               onClick={() => setIsThreadOpen(true)}
             >
-              <div className="flex items-center">
-                <MessageSquareText className="h-4 w-4" />
-                {message.thread_count && message.thread_count > 0 && (
-                  <span className="ml-1 text-xs">{message.thread_count}</span>
-                )}
-              </div>
+              <MessageSquareText className="h-4 w-4" />
             </Button>
           )}
 
@@ -255,39 +250,55 @@ export function Message({
             <p className="text-sm">{message.content}</p>
           )}
 
-          {/* Reactions */}
-          {message.reactions && message.reactions.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-1 items-center">
-              {Object.entries(reactionGroups).map(
-                ([emoji, { count, userIds }]) => {
-                  const hasUserReacted =
-                    currentUserId && userIds.has(currentUserId)
-                  return (
-                    <button
-                      key={emoji}
-                      onClick={() => {
-                        if (hasUserReacted && onRemoveReaction) {
-                          onRemoveReaction(message.id, emoji)
-                        } else if (onAddReaction) {
-                          onAddReaction(message.id, emoji)
-                        }
-                      }}
-                      className={`rounded-full h-7 px-2 text-sm cursor-pointer transition-colors duration-200 border inline-flex items-center ${
-                        hasUserReacted
-                          ? "bg-indigo-100 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-700 hover:bg-indigo-200 dark:hover:bg-indigo-800/30"
-                          : "bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600"
-                      }`}
-                    >
-                      {emoji}{" "}
-                      <span className="ml-1 min-w-[12px] text-center">
-                        {count}
-                      </span>
-                    </button>
-                  )
-                }
+          {/* Reactions and Thread Count */}
+          <div className="flex flex-wrap items-center gap-1 mt-1">
+            {message.reactions && message.reactions.length > 0 && (
+              <>
+                {Object.entries(reactionGroups).map(
+                  ([emoji, { count, userIds }]) => {
+                    const hasUserReacted =
+                      currentUserId && userIds.has(currentUserId)
+                    return (
+                      <button
+                        key={emoji}
+                        onClick={() => {
+                          if (hasUserReacted && onRemoveReaction) {
+                            onRemoveReaction(message.id, emoji)
+                          } else if (onAddReaction) {
+                            onAddReaction(message.id, emoji)
+                          }
+                        }}
+                        className={`rounded-full h-7 px-2 text-sm cursor-pointer transition-colors duration-200 border inline-flex items-center ${
+                          hasUserReacted
+                            ? "bg-indigo-100 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-700 hover:bg-indigo-200 dark:hover:bg-indigo-800/30"
+                            : "bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600"
+                        }`}
+                      >
+                        {emoji}{" "}
+                        <span className="ml-1 min-w-[12px] text-center">
+                          {count}
+                        </span>
+                      </button>
+                    )
+                  }
+                )}
+              </>
+            )}
+
+            {/* Thread Count - Only show if there are replies */}
+            {showThread &&
+              message.thread_count != null &&
+              message.thread_count > 0 && (
+                <button
+                  onClick={() => setIsThreadOpen(true)}
+                  className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground bg-muted/50 hover:bg-muted px-2 py-1 rounded"
+                >
+                  <MessageSquareText className="h-3.5 w-3.5" />
+                  {message.thread_count}{" "}
+                  {message.thread_count === 1 ? "reply" : "replies"}
+                </button>
               )}
-            </div>
-          )}
+          </div>
         </div>
       </div>
 
