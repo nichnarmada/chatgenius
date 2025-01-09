@@ -34,6 +34,8 @@ import { WorkspaceSettingsModal } from "@/components/modals/workspace-settings-m
 import { cn } from "@/lib/utils"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import Image from "next/image"
+import { useToast } from "@/components/ui/use-toast"
+import { LeaveWorkspaceModal } from "@/components/modals/leave-workspace-modal"
 
 interface WorkspaceUser {
   id: string
@@ -46,6 +48,10 @@ interface Workspace {
   id: string
   name: string
   image_url: string | null
+  workspace_members: Array<{
+    user_id: string
+    role: "owner" | "member"
+  }>
 }
 
 interface WorkspaceLayoutClientProps {
@@ -96,14 +102,64 @@ export function WorkspaceLayoutClient({
   workspaceUsers,
 }: WorkspaceLayoutClientProps) {
   const [showSignOutModal, setShowSignOutModal] = useState(false)
+  const [showLeaveWorkspaceModal, setShowLeaveWorkspaceModal] = useState(false)
   const [isCreateChannelOpen, setIsCreateChannelOpen] = useState(false)
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [showWorkspaceSettingsModal, setShowWorkspaceSettingsModal] =
     useState(false)
+  const [isLeaving, setIsLeaving] = useState(false)
+  const [leaveError, setLeaveError] = useState<string | undefined>()
   const router = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
+  const { toast } = useToast()
+
+  // Check if user is owner
+  const isOwner = workspace.workspace_members?.some(
+    (member) => member.user_id === user.id && member.role === "owner"
+  )
+
+  const handleLeaveWorkspace = async () => {
+    if (isLeaving) return
+
+    // Prevent owners from even trying to leave
+    if (isOwner) {
+      setLeaveError(
+        "You cannot leave this workspace because you are the owner. Transfer ownership to another member first."
+      )
+      return
+    }
+
+    try {
+      setIsLeaving(true)
+      setLeaveError(undefined)
+      const response = await fetch(`/api/workspaces/${workspace.id}/leave`, {
+        method: "POST",
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to leave workspace")
+      }
+
+      toast({
+        title: "Left workspace",
+        description: "You have successfully left the workspace.",
+      })
+
+      setShowLeaveWorkspaceModal(false)
+      router.push("/workspaces")
+    } catch (error) {
+      console.error("Error leaving workspace:", error)
+      setLeaveError(
+        error instanceof Error ? error.message : "Failed to leave workspace"
+      )
+    } finally {
+      setIsLeaving(false)
+    }
+  }
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -162,13 +218,13 @@ export function WorkspaceLayoutClient({
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/workspaces" className="cursor-pointer">
-                  <div className="flex items-center w-full text-destructive">
-                    <DoorOpen className="mr-2 h-4 w-4" />
-                    Leave Workspace
-                  </div>
-                </Link>
+              <DropdownMenuItem
+                onSelect={() => setShowLeaveWorkspaceModal(true)}
+              >
+                <div className="flex items-center w-full text-destructive">
+                  <DoorOpen className="mr-2 h-4 w-4" />
+                  Leave Workspace
+                </div>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -319,6 +375,19 @@ export function WorkspaceLayoutClient({
         open={showSignOutModal}
         onOpenChange={setShowSignOutModal}
         onConfirm={handleSignOut}
+      />
+
+      <LeaveWorkspaceModal
+        open={showLeaveWorkspaceModal}
+        onOpenChange={(open) => {
+          setShowLeaveWorkspaceModal(open)
+          if (!open) {
+            setLeaveError(undefined)
+          }
+        }}
+        onConfirm={handleLeaveWorkspace}
+        isLoading={isLeaving}
+        error={leaveError}
       />
 
       <CreateChannelModal
