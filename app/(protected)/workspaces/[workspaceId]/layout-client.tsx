@@ -169,9 +169,9 @@ export function WorkspaceLayoutClient({
   return (
     <div className="flex h-screen">
       {/* Sidebar */}
-      <div className="w-64 bg-muted flex flex-col">
+      <div className="w-64 bg-muted flex flex-col border-r">
         {/* Workspace Name */}
-        <div className="h-[60px] border-b">
+        <div className="h-[60px] min-h-[60px] border-b">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -319,12 +319,12 @@ export function WorkspaceLayoutClient({
         </div>
 
         {/* User Profile Section */}
-        <div className="mt-auto">
+        <div className="h-[60px] min-h-[60px] border-t">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
-                className="w-full px-4 justify-start h-[60px] border-t"
+                className="w-full h-full px-4 justify-start"
               >
                 <div className="flex items-center justify-between w-full">
                   <div className="flex items-center gap-2">
@@ -368,7 +368,7 @@ export function WorkspaceLayoutClient({
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">{children}</div>
+      <main className="flex-1 flex flex-col overflow-hidden">{children}</main>
 
       {/* Modals */}
       <SignOutModal
