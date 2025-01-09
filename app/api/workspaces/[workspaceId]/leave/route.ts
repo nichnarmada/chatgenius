@@ -1,13 +1,10 @@
+import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
-import { NextResponse } from "next/server"
 
-export async function POST(
-  request: Request,
-  { params }: { params: { workspaceId: string } }
-) {
+export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
-    const { workspaceId } = await params
+    const workspaceId = request.nextUrl.pathname.split("/")[3]
 
     const {
       data: { user },
@@ -47,7 +44,7 @@ export async function POST(
     const { error: leaveError } = await supabase
       .from("workspace_members")
       .delete()
-      .eq("workspace_id", params.workspaceId)
+      .eq("workspace_id", workspaceId)
       .eq("user_id", user.id)
 
     if (leaveError) {
