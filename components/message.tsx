@@ -1,12 +1,23 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
+import { useState, useEffect } from "react"
+import { formatDistanceToNow } from "date-fns"
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import { MoreHorizontal, Smile } from "lucide-react"
-import { useEffect, useState } from "react"
+  MessageSquareText,
+  MoreHorizontal,
+  Pencil,
+  Trash,
+  Smile,
+} from "lucide-react"
+import { Button } from "./ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu"
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover"
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
+import { MessageInput } from "./message-input"
+import { ThreadModal } from "./thread/thread-modal"
 import { createClient } from "@/utils/supabase/client"
 
 const additionalEmojis = [
@@ -22,11 +33,11 @@ const additionalEmojis = [
   "💯",
 ]
 
-interface User {
+interface Profile {
   id: string
   email: string
-  display_name: string
-  avatar_url?: string
+  display_name: string | null
+  avatar_url: string | null
 }
 
 interface Reaction {
@@ -36,45 +47,45 @@ interface Reaction {
 }
 
 interface MessageProps {
-  id: string
-  content: string
-  created_at: string
-  user: User
-  reactions?: Reaction[]
+  message: {
+    id: string
+    content: string
+    created_at: string
+    updated_at?: string
+    thread_count?: number
+    profiles?: Profile // from channel messages
+    profile?: Profile // from channel messages (old structure)
+    sender?: Profile // from DM messages
+    reactions?: Reaction[]
+  }
+  onUpdate: (message: any) => void
+  onDelete: (messageId: string) => void
+  onAddReaction?: (messageId: string, emoji: string) => Promise<void>
+  onRemoveReaction?: (messageId: string, emoji: string) => Promise<void>
   isDM?: boolean
-  onAddReaction: (messageId: string, emoji: string) => Promise<void>
-  onRemoveReaction: (messageId: string, emoji: string) => Promise<void>
+  showThread?: boolean
 }
 
 export function Message({
-  id,
-  content,
-  created_at,
-  user,
-  reactions = [],
-  isDM = false,
+  message,
+  onUpdate,
+  onDelete,
   onAddReaction,
   onRemoveReaction,
+  isDM = false,
+  showThread = true,
 }: MessageProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [isHovered, setIsHovered] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [isThreadOpen, setIsThreadOpen] = useState(false)
+  const [isReactionOpen, setIsReactionOpen] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const supabase = createClient()
 
-  useEffect(() => {
-    const getCurrentUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (user) {
-        setCurrentUserId(user.id)
-      }
-    }
-    getCurrentUser()
-  }, [])
+  // Get the user profile data regardless of the source
+  const userProfile = message.profiles || message.profile || message.sender
 
   // Group reactions by emoji and get user IDs who reacted
-  const reactionGroups = reactions.reduce(
+  const reactionGroups = (message.reactions || []).reduce(
     (acc, reaction) => {
       if (!acc[reaction.emoji]) {
         acc[reaction.emoji] = {
@@ -89,142 +100,204 @@ export function Message({
     {} as Record<string, { count: number; userIds: Set<string> }>
   )
 
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (user) {
+        setCurrentUserId(user.id)
+      }
+    }
+    getCurrentUser()
+  }, [])
+
+  const handleUpdate = async (content: string) => {
+    try {
+      const response = await fetch(`/api/messages/${message.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ content }),
+      })
+      const data = await response.json()
+      if (data.message) {
+        onUpdate(data.message)
+        setIsEditing(false)
+      }
+    } catch (error) {
+      console.error("Error updating message:", error)
+    }
+  }
+
+  const handleDelete = async () => {
+    try {
+      const response = await fetch(`/api/messages/${message.id}`, {
+        method: "DELETE",
+      })
+      if (response.ok) {
+        onDelete(message.id)
+      }
+    } catch (error) {
+      console.error("Error deleting message:", error)
+    }
+  }
+
+  if (!userProfile) {
+    return null // or some fallback UI
+  }
+
   return (
-    <div
-      className={`group relative py-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors duration-200 ${isOpen && "bg-gray-100 dark:bg-gray-800"}`}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => {
-        if (!isOpen) {
-          setIsHovered(false)
-        }
-      }}
-    >
-      <div
-        className={`absolute right-2 -top-3 flex items-center gap-0.5 transition-opacity duration-200 bg-background shadow-sm rounded-md border z-10 ${isHovered || isOpen ? "opacity-100" : "opacity-0"}`}
-      >
-        <Popover
-          open={isOpen}
-          onOpenChange={(open) => {
-            setIsOpen(open)
-            if (!open) {
-              setIsHovered(false)
-            }
-          }}
-        >
-          <PopoverTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-7 px-2">
-              <Smile className="h-4 w-4" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent
-            side="top"
-            sideOffset={10}
-            align="start"
-            className="w-auto p-1"
-          >
-            <div className="flex gap-1">
-              {additionalEmojis.map((emoji) => (
-                <Button
-                  key={emoji}
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    onAddReaction(id, emoji)
-                    setIsOpen(false)
-                  }}
-                >
-                  {emoji}
-                </Button>
-              ))}
-            </div>
-          </PopoverContent>
-        </Popover>
-        <Button variant="ghost" size="sm" className="h-7 px-2">
-          <MoreHorizontal className="h-4 w-4" />
-        </Button>
-      </div>
-      <div className="px-4 py-1">
-        <div className="flex items-center gap-3">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={user.avatar_url} />
-            <AvatarFallback>
-              {user.display_name?.charAt(0) || user.email?.charAt(0)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-baseline gap-2">
-              <span className="font-semibold text-sm">{user.display_name}</span>
-              <span className="text-xs text-muted-foreground">
-                {new Date(created_at).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </span>
-            </div>
-            <div className="mt-0.5 text-sm">{content}</div>
-            {reactions.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-1 items-center">
-                {Object.entries(reactionGroups).map(
-                  ([emoji, { count, userIds }]) => {
-                    const hasUserReacted =
-                      currentUserId && userIds.has(currentUserId)
-                    return (
-                      <span
-                        key={emoji}
-                        onClick={() => {
-                          if (hasUserReacted) {
-                            onRemoveReaction(id, emoji)
-                          } else {
-                            onAddReaction(id, emoji)
-                          }
-                        }}
-                        className={`rounded-full h-7 px-2 text-sm cursor-pointer transition-colors duration-200 border inline-flex items-center ${
-                          hasUserReacted
-                            ? "bg-indigo-100 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-700 hover:bg-indigo-200 dark:hover:bg-indigo-800/30"
-                            : "bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600"
-                        }`}
-                      >
-                        {emoji}{" "}
-                        <span className="ml-1 inline-block min-w-[12px] text-center">
-                          {count}
-                        </span>
-                      </span>
-                    )
-                  }
+    <>
+      <div className="group relative flex gap-3 px-4 py-2 hover:bg-muted/50">
+        {/* Reaction and Action Buttons */}
+        <div className="absolute right-2 -top-3 flex items-center gap-0.5 transition-opacity duration-200 bg-background shadow-sm rounded-md border z-10 opacity-0 group-hover:opacity-100">
+          {/* Thread Button */}
+          {showThread && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2"
+              onClick={() => setIsThreadOpen(true)}
+            >
+              <div className="flex items-center">
+                <MessageSquareText className="h-4 w-4" />
+                {message.thread_count && message.thread_count > 0 && (
+                  <span className="ml-1 text-xs">{message.thread_count}</span>
                 )}
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button className="rounded-full h-7 px-2 text-sm cursor-pointer transition-colors duration-200 border bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600 inline-flex items-center">
-                      <Smile className="h-4 w-4" />
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    side="top"
-                    sideOffset={10}
-                    align="start"
-                    className="w-auto p-1"
-                  >
-                    <div className="flex gap-1">
-                      {additionalEmojis.map((emoji) => (
-                        <Button
-                          key={emoji}
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            onAddReaction(id, emoji)
-                          }}
-                        >
-                          {emoji}
-                        </Button>
-                      ))}
-                    </div>
-                  </PopoverContent>
-                </Popover>
               </div>
-            )}
+            </Button>
+          )}
+
+          {/* Reaction Button */}
+          <Popover
+            open={isReactionOpen}
+            onOpenChange={(open) => setIsReactionOpen(open)}
+          >
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-7 px-2">
+                <Smile className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent side="top" align="start" className="w-auto p-1">
+              <div className="flex gap-1">
+                {additionalEmojis.map((emoji) => (
+                  <Button
+                    key={emoji}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      if (onAddReaction) {
+                        onAddReaction(message.id, emoji)
+                        setIsReactionOpen(false)
+                      }
+                    }}
+                  >
+                    {emoji}
+                  </Button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          {/* More Options Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-7 px-2">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-destructive"
+                onClick={handleDelete}
+              >
+                <Trash className="mr-2 h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        <Avatar className="h-8 w-8">
+          <AvatarImage src={userProfile.avatar_url || undefined} />
+          <AvatarFallback>
+            {userProfile.display_name?.[0] ||
+              userProfile.email[0].toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+
+        <div className="flex-1 space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">
+              {userProfile.display_name || userProfile.email}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {formatDistanceToNow(new Date(message.created_at), {
+                addSuffix: true,
+              })}
+            </span>
           </div>
+
+          {isEditing ? (
+            <MessageInput
+              autoFocus
+              defaultValue={message.content}
+              onSubmit={handleUpdate}
+              onCancel={() => setIsEditing(false)}
+            />
+          ) : (
+            <p className="text-sm">{message.content}</p>
+          )}
+
+          {/* Reactions */}
+          {message.reactions && message.reactions.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1 items-center">
+              {Object.entries(reactionGroups).map(
+                ([emoji, { count, userIds }]) => {
+                  const hasUserReacted =
+                    currentUserId && userIds.has(currentUserId)
+                  return (
+                    <button
+                      key={emoji}
+                      onClick={() => {
+                        if (hasUserReacted && onRemoveReaction) {
+                          onRemoveReaction(message.id, emoji)
+                        } else if (onAddReaction) {
+                          onAddReaction(message.id, emoji)
+                        }
+                      }}
+                      className={`rounded-full h-7 px-2 text-sm cursor-pointer transition-colors duration-200 border inline-flex items-center ${
+                        hasUserReacted
+                          ? "bg-indigo-100 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-700 hover:bg-indigo-200 dark:hover:bg-indigo-800/30"
+                          : "bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600"
+                      }`}
+                    >
+                      {emoji}{" "}
+                      <span className="ml-1 min-w-[12px] text-center">
+                        {count}
+                      </span>
+                    </button>
+                  )
+                }
+              )}
+            </div>
+          )}
         </div>
       </div>
-    </div>
+
+      {showThread && (
+        <ThreadModal
+          isOpen={isThreadOpen}
+          onClose={() => setIsThreadOpen(false)}
+          parentMessage={message as any}
+        />
+      )}
+    </>
   )
 }

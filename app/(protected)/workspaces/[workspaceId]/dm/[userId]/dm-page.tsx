@@ -18,15 +18,17 @@ interface Message {
   id: string
   content: string
   created_at: string
+  updated_at: string
   workspace_id: string
   sender_id: string
   receiver_id: string
   sender: {
     id: string
     email: string
-    display_name: string
-    avatar_url?: string
+    display_name: string | null
+    avatar_url: string | null
   }
+  thread_count?: number
   reactions?: Reaction[]
 }
 
@@ -298,14 +300,22 @@ export function DMPage({
             {messages?.map((message) => (
               <Message
                 key={message.id}
-                id={message.id}
-                content={message.content}
-                created_at={message.created_at}
-                user={message.sender}
-                reactions={message.reactions}
-                isDM
+                message={message}
+                onUpdate={(updatedMessage) => {
+                  setMessages((prev) =>
+                    prev.map((msg) =>
+                      msg.id === updatedMessage.id ? updatedMessage : msg
+                    )
+                  )
+                }}
+                onDelete={(messageId) => {
+                  setMessages((prev) =>
+                    prev.filter((msg) => msg.id !== messageId)
+                  )
+                }}
                 onAddReaction={addReaction}
                 onRemoveReaction={removeReaction}
+                isDM
               />
             ))}
           </div>

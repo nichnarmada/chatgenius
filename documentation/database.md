@@ -41,6 +41,17 @@ This document outlines the database schema for our chat/messaging system impleme
 - `created_at` (timestamptz)
 - `updated_at` (timestamptz)
 - `content_search` (tsvector)
+- `thread_count` (integer, default: 0)
+
+### Thread Messages
+
+- `id` (uuid, PK)
+- `content` (text)
+- `user_id` (uuid, FK → auth.users.id)
+- `parent_message_id` (uuid, FK → messages.id)
+- `created_at` (timestamptz)
+- `updated_at` (timestamptz)
+- `content_search` (tsvector)
 
 ### Reactions
 
@@ -79,6 +90,13 @@ This document outlines the database schema for our chat/messaging system impleme
 - `invited_by` (uuid, FK → auth.users.id)
 - `created_at` (timestamptz)
 - `accepted_at` (timestamptz, nullable)
+
+### Thread Messages
+
+- SELECT: Users can view thread messages in their channels
+- INSERT: Users can reply in threads in their channels
+- UPDATE: Users can update their own thread messages
+- DELETE: Users can delete their own thread messages
 
 ## Row Level Security (RLS) Policies
 
@@ -129,6 +147,13 @@ Applied to `public` role:
 - INSERT: Members can create invites
 - DELETE: Members can delete invites
 
+### Thread Messages
+
+- SELECT: Users can view thread messages in their channels
+- INSERT: Users can reply in threads in their channels
+- UPDATE: Users can update their own thread messages
+- DELETE: Users can delete their own thread messages
+
 ## Enums
 
 ### workspace_role
@@ -142,6 +167,7 @@ Consider adding indexes for:
 
 - `workspace_members(workspace_id, user_id)`
 - `messages(channel_id, created_at)`
+- `thread_messages(parent_message_id, created_at)`
 - `direct_messages(workspace_id, sender_id, receiver_id)`
 - `workspace_invites(email, workspace_id)`
 
@@ -156,7 +182,7 @@ Consider adding indexes for:
 ## Future Considerations
 
 1. Message reactions/emoji support
-2. Message threading
+2. ~~Message threading~~
 3. Channel categories/organization
 4. User presence system
 5. Message read receipts
