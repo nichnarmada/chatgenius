@@ -33,24 +33,24 @@
 13. `GET /api/messages?channel_id=x` - List messages for a specific channel (auth required).
 14. `GET /api/messages?dm_id=x` - List messages for a specific DM (auth required).
 
-#### **File** (Phase 2)
-
-15. `POST /api/files` - Upload a file to a channel or DM (auth required).
-16. `GET /api/files/:id` - Retrieve file metadata by ID (auth required).
-
-#### **Search** (Phase 2)
-
-17. `GET /api/search?query=x` - Search messages or files within a workspace (auth required).
-
-#### **Thread** (Phase 3)
+#### **Thread** (Phase 2)
 
 18. `POST /api/threads` - Create a new thread linked to a message (auth required).
 19. `GET /api/threads/:id` - Retrieve thread messages by thread ID (auth required).
 
-#### **Reaction** (Phase 3)
+#### **Reaction** (Phase 2)
 
 20. `POST /api/reactions` - Add an emoji reaction to a message (auth required).
 21. `DELETE /api/reactions/:id` - Remove a reaction by ID (auth required).
+
+#### **File** (Phase 3)
+
+15. `POST /api/files` - Upload a file to a channel or DM (auth required).
+16. `GET /api/files/:id` - Retrieve file metadata by ID (auth required).
+
+#### **Search** (Phase 3)
+
+17. `GET /api/search?query=x` - Search messages or files within a workspace (auth required).
 
 ---
 

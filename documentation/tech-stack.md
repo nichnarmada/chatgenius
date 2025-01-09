@@ -56,15 +56,15 @@
 3. **Channel/DM Organization**: Use Supabase to create and manage workspace, channel, and DM relationships.
 4. **User Presence & Status**: Leverage Supabase real-time subscriptions for presence tracking.
 
-#### Phase 2: File Sharing & Search
-
-1. **File Sharing**: Integrate Supabase storage for file uploads or Cloudinary for media optimization.
-2. **Search**: Implement Typesense for searching messages, files, and channels.
-
-#### Phase 3: Thread Support & Emoji Reactions
+#### Phase 2: Thread Support & Emoji Reactions
 
 1. **Thread Support**: Add thread functionality using React Context API to manage nested message structures in Supabase.
 2. **Emoji Reactions**: Store emoji reactions in Supabase with a simple schema extension.
+
+#### Phase 3: File Sharing & Search
+
+1. **File Sharing**: Integrate Supabase storage for file uploads or Cloudinary for media optimization.
+2. **Search**: Implement Typesense for searching messages, files, and channels.
 
 ---
 

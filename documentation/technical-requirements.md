@@ -43,7 +43,28 @@
 
 ---
 
-### **Phase 2: File Sharing & Search**
+### **Phase 2: Thread Support & Emoji Reactions**
+
+#### **Data Models**
+
+1. **Thread**
+   - Fields: `id (UUID)`, `parent_message_id`, `channel_id`, `created_by_user_id`, `created_at`, `updated_at`.
+   - Relationships: Belongs to a `Channel` and has many `Messages`.
+2. **Reaction**
+   - Fields: `id (UUID)`, `message_id`, `user_id`, `emoji`, `created_at`.
+   - Relationships: Belongs to a `Message` and a `User`.
+
+#### **Core Functionality Requirements**
+
+1. Enable threaded conversations by linking messages to a parent thread using the **Thread** model.
+2. Allow users to add emoji reactions to messages, storing them in the **Reaction** model.
+
+#### **Authorization Requirements (Supabase auth Integration)**
+
+1. Ensure only users with access to a channel or DM can view or participate in threads.
+2. Allow emoji reactions only from users who can view the parent message.
+
+### **Phase 3: File Sharing & Search**
 
 #### **Data Models**
 
@@ -67,30 +88,3 @@
 
 1. Restrict file uploads to authenticated users and ensure permissions align with channel or DM access rules.
 2. Allow search only within channels or DMs the user is authorized to access.
-
----
-
-### **Phase 3: Thread Support & Emoji Reactions**
-
-#### **Data Models**
-
-1. **Thread**
-   - Fields: `id (UUID)`, `parent_message_id`, `channel_id`, `created_by_user_id`, `created_at`, `updated_at`.
-   - Relationships: Belongs to a `Channel` and has many `Messages`.
-2. **Reaction**
-   - Fields: `id (UUID)`, `message_id`, `user_id`, `emoji`, `created_at`.
-   - Relationships: Belongs to a `Message` and a `User`.
-
----
-
-#### **Core Functionality Requirements**
-
-1. Enable threaded conversations by linking messages to a parent thread using the **Thread** model.
-2. Allow users to add emoji reactions to messages, storing them in the **Reaction** model.
-
----
-
-#### **Authorization Requirements (Supabase auth Integration)**
-
-1. Ensure only users with access to a channel or DM can view or participate in threads.
-2. Allow emoji reactions only from users who can view the parent message.

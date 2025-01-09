@@ -18,7 +18,19 @@
 
 ---
 
-#### **Phase 2: File Sharing & Search**
+#### **Phase 2: Thread Support & Emoji Reactions**
+
+##### Regular User Stories:
+
+1. As a regular user, I want to reply to messages in threads so that conversations remain organized and easy to follow.
+2. As a regular user, I want to react to messages with emojis so that I can quickly provide feedback or express sentiment without typing.
+
+##### Workspace Admin Stories:
+
+1. As a workspace admin, I want to enable or disable thread support so that I can decide if my team should use threaded conversations.
+2. As a workspace admin, I want to customize which emojis are available for reactions so that I can align them with my team's culture or preferences.
+
+#### **Phase 3: File Sharing & Search**
 
 ##### Regular User Stories:
 
@@ -29,17 +41,3 @@
 
 1. As a workspace admin, I want to enable or disable file sharing for users so that I can maintain control over workspace content.
 2. As a workspace admin, I want to manage storage usage for shared files so that the workspace operates efficiently.
-
----
-
-#### **Phase 3: Thread Support & Emoji Reactions**
-
-##### Regular User Stories:
-
-1. As a regular user, I want to reply to messages in threads so that conversations remain organized and easy to follow.
-2. As a regular user, I want to react to messages with emojis so that I can quickly provide feedback or express sentiment without typing.
-
-##### Workspace Admin Stories:
-
-1. As a workspace admin, I want to enable or disable thread support so that I can decide if my team should use threaded conversations.
-2. As a workspace admin, I want to customize which emojis are available for reactions so that I can align them with my team’s culture or preferences.
