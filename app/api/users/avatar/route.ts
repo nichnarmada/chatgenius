@@ -33,7 +33,6 @@ export async function POST(request: Request) {
       )
     }
 
-    console.log("Processing image...")
     // Process the image
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
@@ -48,7 +47,6 @@ export async function POST(request: Request) {
       .toBuffer()
 
     const filePath = `${user.id}/${Date.now()}.webp`
-    console.log("File path:", filePath)
 
     // Try to upload directly without checking bucket
     const { data: uploadData, error: uploadError } = await adminClient.storage
@@ -67,14 +65,10 @@ export async function POST(request: Request) {
       )
     }
 
-    console.log("Upload successful:", uploadData)
-
     // Get public URL for the uploaded avatar
     const {
       data: { publicUrl },
     } = adminClient.storage.from("avatars").getPublicUrl(filePath)
-
-    console.log("Generated public URL:", publicUrl)
 
     // Update user's profile with new avatar URL
     const { error: profileError } = await supabase

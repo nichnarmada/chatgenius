@@ -6,7 +6,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { MoreHorizontal, Smile } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { createClient } from "@/utils/supabase/client"
 
 const additionalEmojis = [
   "👍",
@@ -57,6 +58,36 @@ export function Message({
 }: MessageProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const supabase = createClient()
+
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (user) {
+        setCurrentUserId(user.id)
+      }
+    }
+    getCurrentUser()
+  }, [])
+
+  // Group reactions by emoji and get user IDs who reacted
+  const reactionGroups = reactions.reduce(
+    (acc, reaction) => {
+      if (!acc[reaction.emoji]) {
+        acc[reaction.emoji] = {
+          count: 0,
+          userIds: new Set(),
+        }
+      }
+      acc[reaction.emoji].count++
+      acc[reaction.emoji].userIds.add(reaction.user_id)
+      return acc
+    },
+    {} as Record<string, { count: number; userIds: Set<string> }>
+  )
 
   return (
     <div
@@ -85,7 +116,7 @@ export function Message({
               <Smile className="h-4 w-4" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent sideOffset={5} className="w-auto p-1">
+          <PopoverContent side="top" sideOffset={10} className="w-auto p-1">
             <div className="flex gap-1">
               {additionalEmojis.map((emoji) => (
                 <Button
@@ -128,23 +159,34 @@ export function Message({
             <div className="mt-0.5 text-sm">{content}</div>
             {reactions.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-1">
-                {Object.entries(
-                  reactions.reduce(
-                    (acc, reaction) => {
-                      acc[reaction.emoji] = (acc[reaction.emoji] || 0) + 1
-                      return acc
-                    },
-                    {} as Record<string, number>
-                  )
-                ).map(([emoji, count]) => (
-                  <span
-                    key={emoji}
-                    onClick={() => onRemoveReaction(id, emoji)}
-                    className="bg-gray-100 dark:bg-gray-700 rounded-full px-2 py-1 text-sm cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
-                  >
-                    {emoji} {count}
-                  </span>
-                ))}
+                {Object.entries(reactionGroups).map(
+                  ([emoji, { count, userIds }]) => {
+                    const hasUserReacted =
+                      currentUserId && userIds.has(currentUserId)
+                    return (
+                      <span
+                        key={emoji}
+                        onClick={() => {
+                          if (hasUserReacted) {
+                            onRemoveReaction(id, emoji)
+                          } else {
+                            onAddReaction(id, emoji)
+                          }
+                        }}
+                        className={`rounded-full px-2 py-1 text-sm cursor-pointer transition-colors duration-200 border ${
+                          hasUserReacted
+                            ? "bg-indigo-100 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-700 hover:bg-indigo-200 dark:hover:bg-indigo-800/30"
+                            : "bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600"
+                        }`}
+                      >
+                        {emoji}{" "}
+                        <span className="ml-1 inline-block min-w-[12px] text-center">
+                          {count}
+                        </span>
+                      </span>
+                    )
+                  }
+                )}
               </div>
             )}
           </div>

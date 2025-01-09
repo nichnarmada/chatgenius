@@ -292,9 +292,8 @@ export function ChannelPage({
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto py-4">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto py-4">
         <div className="flex flex-col min-h-full">
-          <div className="flex-1" />
           <div className="px-4">
             {messages?.map((message) => (
               <Message

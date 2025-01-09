@@ -32,8 +32,6 @@ export function WorkspacePictureUpload({
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  console.log("Current Picture URL:", currentPictureUrl)
-
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -81,8 +79,6 @@ export function WorkspacePictureUpload({
       if (!response.ok) {
         throw new Error(data.error || "Upload failed")
       }
-
-      console.log("Upload response:", data)
 
       toast({
         title: "Picture updated",
