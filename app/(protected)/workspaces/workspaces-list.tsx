@@ -234,8 +234,10 @@ export function WorkspacesList({
         onConfirm={handleSignOut}
       />
       <ProfileSettingsModal
-        open={showProfileModal}
-        onOpenChange={setShowProfileModal}
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        user={user}
+        profile={profile}
       />
     </div>
   )

@@ -4,10 +4,7 @@ import sharp from "sharp"
 
 const WORKSPACE_IMAGE_SIZE = 400 // Size in pixels for the square workspace image
 
-export async function POST(
-  request: Request,
-  { params }: { params: { workspaceId: string } }
-) {
+export async function POST(request: Request) {
   try {
     const supabase = await createClient()
     const adminClient = await createAdminClient()
@@ -21,11 +18,15 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    // Get workspaceId from the URL
+    const url = new URL(request.url)
+    const workspaceId = url.pathname.split("/")[3] // /api/workspaces/[workspaceId]/picture
+
     // Check if user has access to this workspace
     const { data: workspace, error: workspaceError } = await supabase
       .from("workspaces")
       .select("id")
-      .eq("id", params.workspaceId)
+      .eq("id", workspaceId)
       .single()
 
     if (workspaceError || !workspace) {
