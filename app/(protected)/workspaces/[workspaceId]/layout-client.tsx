@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { createClient } from "@/utils/supabase/client"
 import { redirect, useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -95,12 +95,13 @@ function WorkspacePlaceholder({ name }: WorkspacePlaceholderProps) {
 
 export function WorkspaceLayoutClient({
   children,
-  workspace,
+  workspace: initialWorkspace,
   channels,
   user,
   profile,
   workspaceUsers,
 }: WorkspaceLayoutClientProps) {
+  const [workspace, setWorkspace] = useState(initialWorkspace)
   const [showSignOutModal, setShowSignOutModal] = useState(false)
   const [showLeaveWorkspaceModal, setShowLeaveWorkspaceModal] = useState(false)
   const [isCreateChannelOpen, setIsCreateChannelOpen] = useState(false)
@@ -114,6 +115,32 @@ export function WorkspaceLayoutClient({
   const pathname = usePathname()
   const supabase = createClient()
   const { toast } = useToast()
+
+  useEffect(() => {
+    const workspaceChannel = supabase
+      .channel("workspace_changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "workspaces",
+          filter: `id=eq.${workspace.id}`,
+        },
+        async (payload) => {
+          // Update workspace state with new data
+          setWorkspace((prev) => ({
+            ...prev,
+            ...payload.new,
+          }))
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(workspaceChannel)
+    }
+  }, [workspace.id, supabase])
 
   // Check if user is owner
   const isOwner = workspace.workspace_members?.some(
