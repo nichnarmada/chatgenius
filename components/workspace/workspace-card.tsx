@@ -21,17 +21,16 @@ interface WorkspaceCardProps {
 }
 
 function WorkspacePlaceholder({ name }: { name: string }) {
-  // Get the first letter and ensure it's uppercase
   const initial = name.charAt(0).toUpperCase()
 
-  // Generate a consistent color based on the name
+  // Color classes with background colors and text colors
   const colors = [
-    "bg-blue-100 text-blue-600",
-    "bg-green-100 text-green-600",
-    "bg-purple-100 text-purple-600",
-    "bg-yellow-100 text-yellow-600",
-    "bg-pink-100 text-pink-600",
-    "bg-indigo-100 text-indigo-600",
+    "bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-300",
+    "bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-300",
+    "bg-purple-100 text-purple-600 dark:bg-purple-900/50 dark:text-purple-300",
+    "bg-yellow-100 text-yellow-600 dark:bg-yellow-900/50 dark:text-yellow-300",
+    "bg-pink-100 text-pink-600 dark:bg-pink-900/50 dark:text-pink-300",
+    "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-300",
   ]
   const colorIndex =
     name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) %
@@ -40,7 +39,7 @@ function WorkspacePlaceholder({ name }: { name: string }) {
 
   return (
     <div
-      className={`w-full h-full rounded-lg ${colorClass} flex items-center justify-center group-hover:ring-2 group-hover:ring-blue-500 transition-all duration-300`}
+      className={`w-full h-full rounded-full ${colorClass} flex items-center justify-center border-2 border-transparent`}
     >
       <span className="text-4xl font-bold">{initial}</span>
     </div>
@@ -55,9 +54,8 @@ export function WorkspaceCard({
   const [showJoinModal, setShowJoinModal] = useState(false)
 
   const handleClick = (e: React.MouseEvent) => {
-    // If it's a discoverable workspace (showJoin is true and not a member)
     if (showJoin && !workspace.isMember) {
-      e.preventDefault() // Prevent navigation
+      e.preventDefault()
       setShowJoinModal(true)
     }
   }
@@ -67,21 +65,23 @@ export function WorkspaceCard({
   return (
     <>
       <Link href={href} onClick={handleClick}>
-        <div className="group aspect-square rounded-xl flex flex-col items-center justify-center p-4 transition-all duration-300 hover:shadow-lg relative bg-white cursor-pointer">
-          <div className="relative w-full h-3/4 mb-2">
+        <div className="group aspect-square rounded-xl flex flex-col items-center justify-center p-4 relative border-2 border-transparent hover:border-gray-900 dark:hover:border-gray-100 cursor-pointer">
+          <div className="relative aspect-square w-32 mx-auto mb-2">
             {workspace.image_url ? (
-              <Image
-                src={workspace.image_url}
-                alt={workspace.name}
-                fill
-                className="rounded-lg object-cover group-hover:ring-2 group-hover:ring-blue-500 transition-all duration-300"
-              />
+              <div className="relative w-full h-full rounded-full overflow-hidden">
+                <Image
+                  src={workspace.image_url}
+                  alt={workspace.name}
+                  fill
+                  className="object-cover"
+                />
+              </div>
             ) : (
               <WorkspacePlaceholder name={workspace.name} />
             )}
             {isOwner && (
               <div
-                className="absolute top-2 left-2 bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center"
+                className="absolute top-0 left-0 bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center dark:bg-blue-600"
                 title="You are the owner"
               >
                 <Star size={12} className="mr-1" />
@@ -89,10 +89,10 @@ export function WorkspaceCard({
               </div>
             )}
           </div>
-          <span className="text-lg font-medium text-center mb-1">
+          <span className="text-lg font-medium text-center mb-1 text-gray-900 dark:text-gray-100">
             {workspace.name}
           </span>
-          <div className="flex items-center text-sm text-gray-500">
+          <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
             <Users size={16} className="mr-1" />
             <span>{workspace.memberCount}</span>
           </div>
