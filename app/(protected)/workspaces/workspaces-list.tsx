@@ -19,6 +19,7 @@ import { useState, useEffect } from "react"
 import { createClient } from "@/utils/supabase/client"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/components/ui/use-toast"
+import { CreateWorkspaceModal } from "@/components/modals/create-workspace-modal"
 
 interface WorkspaceMember {
   user_id: string
@@ -43,23 +44,32 @@ interface WorkspacesListProps {
 }
 
 function NewWorkspaceCard() {
+  const [showCreateModal, setShowCreateModal] = useState(false)
+
   return (
-    <Link
-      href="/workspaces/new"
-      className="group aspect-square rounded-xl flex flex-col items-center justify-center p-4 relative border-2 border-transparent hover:border-gray-900 dark:hover:border-gray-100 cursor-pointer"
-    >
-      <div className="relative aspect-square w-32 mx-auto mb-2">
-        <div className="relative w-full h-full rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
-          <Plus className="h-12 w-12 text-gray-400 dark:text-gray-500" />
+    <>
+      <div
+        onClick={() => setShowCreateModal(true)}
+        className="group aspect-square rounded-xl flex flex-col items-center justify-center p-4 relative border-2 border-transparent hover:border-gray-900 dark:hover:border-gray-100 cursor-pointer"
+      >
+        <div className="relative aspect-square w-32 mx-auto mb-2">
+          <div className="relative w-full h-full rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+            <Plus className="h-12 w-12 text-gray-400 dark:text-gray-500" />
+          </div>
+        </div>
+        <span className="text-lg font-medium text-center mb-1 text-gray-900 dark:text-gray-100">
+          New Workspace
+        </span>
+        <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+          <span>Create new</span>
         </div>
       </div>
-      <span className="text-lg font-medium text-center mb-1 text-gray-900 dark:text-gray-100">
-        New Workspace
-      </span>
-      <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-        <span>Create new</span>
-      </div>
-    </Link>
+
+      <CreateWorkspaceModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+      />
+    </>
   )
 }
 
