@@ -116,7 +116,12 @@ export function Message({
               <Smile className="h-4 w-4" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent side="top" sideOffset={10} className="w-auto p-1">
+          <PopoverContent
+            side="top"
+            sideOffset={10}
+            align="start"
+            className="w-auto p-1"
+          >
             <div className="flex gap-1">
               {additionalEmojis.map((emoji) => (
                 <Button
@@ -158,7 +163,7 @@ export function Message({
             </div>
             <div className="mt-0.5 text-sm">{content}</div>
             {reactions.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-1">
+              <div className="flex flex-wrap gap-1 mt-1 items-center">
                 {Object.entries(reactionGroups).map(
                   ([emoji, { count, userIds }]) => {
                     const hasUserReacted =
@@ -173,7 +178,7 @@ export function Message({
                             onAddReaction(id, emoji)
                           }
                         }}
-                        className={`rounded-full px-2 py-1 text-sm cursor-pointer transition-colors duration-200 border ${
+                        className={`rounded-full h-7 px-2 text-sm cursor-pointer transition-colors duration-200 border inline-flex items-center ${
                           hasUserReacted
                             ? "bg-indigo-100 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-700 hover:bg-indigo-200 dark:hover:bg-indigo-800/30"
                             : "bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -187,6 +192,34 @@ export function Message({
                     )
                   }
                 )}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button className="rounded-full h-7 px-2 text-sm cursor-pointer transition-colors duration-200 border bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600 inline-flex items-center">
+                      <Smile className="h-4 w-4" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    side="top"
+                    sideOffset={10}
+                    align="start"
+                    className="w-auto p-1"
+                  >
+                    <div className="flex gap-1">
+                      {additionalEmojis.map((emoji) => (
+                        <Button
+                          key={emoji}
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            onAddReaction(id, emoji)
+                          }}
+                        >
+                          {emoji}
+                        </Button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
             )}
           </div>
