@@ -70,6 +70,52 @@ export function ChannelPage({
           }
         }
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "messages",
+          filter: `channel_id=eq.${channel.id}`,
+        },
+        async (payload) => {
+          // Fetch the updated message with user data
+          const { data: message } = await supabase
+            .from("messages")
+            .select(
+              `
+              *,
+              profile:user_id (
+                id,
+                email,
+                display_name
+              )
+            `
+            )
+            .eq("id", payload.new.id)
+            .single()
+
+          if (message) {
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === message.id ? (message as Message) : msg
+              )
+            )
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "messages",
+          filter: `channel_id=eq.${channel.id}`,
+        },
+        (payload) => {
+          setMessages((prev) => prev.filter((msg) => msg.id !== payload.old.id))
+        }
+      )
       .subscribe()
 
     return () => {

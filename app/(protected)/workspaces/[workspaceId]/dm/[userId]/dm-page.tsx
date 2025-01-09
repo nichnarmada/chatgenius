@@ -58,7 +58,7 @@ export function DMPage({
             .select(
               `
               *,
-              profile:user_id (
+              sender:sender_id (
                 id,
                 email,
                 display_name,
@@ -72,6 +72,53 @@ export function DMPage({
           if (message) {
             setMessages((prev) => [...prev, message as Message])
           }
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "direct_messages",
+          filter: `workspace_id=eq.${workspace.id}`,
+        },
+        async (payload) => {
+          // Fetch the updated message with user data
+          const { data: message } = await supabase
+            .from("direct_messages")
+            .select(
+              `
+              *,
+              sender:sender_id (
+                id,
+                email,
+                display_name,
+                avatar_url
+              )
+            `
+            )
+            .eq("id", payload.new.id)
+            .single()
+
+          if (message) {
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === message.id ? (message as Message) : msg
+              )
+            )
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "direct_messages",
+          filter: `workspace_id=eq.${workspace.id}`,
+        },
+        (payload) => {
+          setMessages((prev) => prev.filter((msg) => msg.id !== payload.old.id))
         }
       )
       .subscribe()
