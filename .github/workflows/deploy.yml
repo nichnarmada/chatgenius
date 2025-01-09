@@ -63,8 +63,8 @@ jobs:
           timeout: 120s
           envs: GITHUB_SHA
           script: |
+            set -x
             echo "Starting deployment..."
-            # Check if directory exists
             if [ ! -d "chatgenius" ]; then
               echo "Directory not found, cloning repository..."
               git clone https://github.com/your-username/chatgenius.git
