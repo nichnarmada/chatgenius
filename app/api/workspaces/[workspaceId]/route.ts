@@ -1,13 +1,10 @@
 import { createServerClient } from "@supabase/ssr"
-import { cookies } from "next/headers"
-import { NextResponse } from "next/server"
+import { NextResponse, NextRequest } from "next/server"
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: { workspaceId: string } }
-) {
+export async function PATCH(request: NextRequest) {
   try {
     const { name, image_url } = await request.json()
+    const workspaceId = request.nextUrl.pathname.split("/")[3]
 
     // Validate input
     if (!name?.trim()) {
@@ -17,14 +14,22 @@ export async function PATCH(
       )
     }
 
-    const cookieStore = await cookies()
+    let response = NextResponse.next({
+      request,
+    })
+
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value
+          getAll() {
+            return request.cookies.getAll()
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              response.cookies.set(name, value, options)
+            })
           },
         },
       }
@@ -43,7 +48,7 @@ export async function PATCH(
     const { data: memberRole } = await supabase
       .from("workspace_members")
       .select("role")
-      .eq("workspace_id", params.workspaceId)
+      .eq("workspace_id", workspaceId)
       .eq("user_id", session.user.id)
       .single()
 
@@ -61,7 +66,7 @@ export async function PATCH(
         name: name.trim(),
         image_url,
       })
-      .eq("id", params.workspaceId)
+      .eq("id", workspaceId)
 
     if (error) {
       console.error("Error updating workspace:", error)

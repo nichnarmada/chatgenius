@@ -8,19 +8,6 @@ import { createClient } from "@/utils/supabase/client"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Message } from "@/components/message"
 
-const additionalEmojis = [
-  "👍",
-  "❤️",
-  "😂",
-  "🎉",
-  "🤔",
-  "👀",
-  "✨",
-  "🙌",
-  "🔥",
-  "💯",
-]
-
 interface Reaction {
   id: string
   emoji: string

@@ -7,19 +7,6 @@ import { useEffect, useRef, useState } from "react"
 import { createClient } from "@/utils/supabase/client"
 import { Message } from "@/components/message"
 
-const additionalEmojis = [
-  "👍",
-  "❤️",
-  "😂",
-  "🎉",
-  "🤔",
-  "👀",
-  "✨",
-  "🙌",
-  "🔥",
-  "💯",
-]
-
 interface Reaction {
   id: string
   emoji: string
