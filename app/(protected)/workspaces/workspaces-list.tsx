@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Plus, LogOut, ChevronUp } from "lucide-react"
+import { Plus, LogOut, ChevronUp, Settings } from "lucide-react"
 import { WorkspaceCard } from "@/components/workspace/workspace-card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { SignOutModal } from "@/components/modals/sign-out-modal"
+import { ProfileSettingsModal } from "@/components/modals/profile-settings-modal"
 import { useState, useEffect } from "react"
 import { createClient } from "@/utils/supabase/client"
 import { useRouter } from "next/navigation"
@@ -71,6 +72,7 @@ export function WorkspacesList({
   success,
 }: WorkspacesListProps) {
   const [showSignOutModal, setShowSignOutModal] = useState(false)
+  const [showProfileModal, setShowProfileModal] = useState(false)
   const router = useRouter()
   const supabase = createClient()
   const { toast } = useToast()
@@ -136,7 +138,7 @@ export function WorkspacesList({
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={user?.user_metadata?.avatar_url} />
+                  <AvatarImage src={profile?.avatar_url} />
                   <AvatarFallback>
                     {profile?.display_name?.charAt(0) || user.email?.charAt(0)}
                   </AvatarFallback>
@@ -155,6 +157,13 @@ export function WorkspacesList({
                 </div>
               </div>
               <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onSelect={() => setShowProfileModal(true)}
+              >
+                <Settings className="h-4 w-4" />
+                Profile Settings
+              </DropdownMenuItem>
               <DropdownMenuItem>
                 <ThemeToggle />
               </DropdownMenuItem>
@@ -163,7 +172,7 @@ export function WorkspacesList({
                 className="text-red-600 cursor-pointer"
                 onSelect={() => setShowSignOutModal(true)}
               >
-                <LogOut className="mr-2 h-4 w-4" />
+                <LogOut className="h-4 w-4" />
                 Log out
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -223,6 +232,10 @@ export function WorkspacesList({
         open={showSignOutModal}
         onOpenChange={setShowSignOutModal}
         onConfirm={handleSignOut}
+      />
+      <ProfileSettingsModal
+        open={showProfileModal}
+        onOpenChange={setShowProfileModal}
       />
     </div>
   )

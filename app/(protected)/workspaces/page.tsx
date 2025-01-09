@@ -19,10 +19,17 @@ export default async function Page({ searchParams }: PageProps) {
     redirect("/login")
   }
 
-  // Get user profile
+  // Get user profile with avatar_url
   const { data: profile } = await supabase
     .from("profiles")
-    .select("*")
+    .select(
+      `
+      id,
+      email,
+      display_name,
+      avatar_url
+    `
+    )
     .eq("id", user.id)
     .single()
 
