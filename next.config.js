@@ -7,6 +7,7 @@ const nextConfig = {
         punycode: false,
       }
     }
+    config.resolve.extensions = [".js", ".jsx", ".ts", ".tsx"]
     return config
   },
   images: {

@@ -65,12 +65,11 @@ jobs:
             export NEXT_PUBLIC_BASE_URL="${NEXT_PUBLIC_BASE_URL}"
             npm run build
 
-            echo "Restarting PM2..."
-            if pm2 list | grep -q "chatgenius-nichnarmada"; then
-              echo "Restarting existing PM2 process..."
-              pm2 restart chatgenius-nichnarmada --update-env
-            else
-              echo "Starting new PM2 process..."
-              pm2 start npm --name "chatgenius-nichnarmada" -- start
-            fi
+            echo "Starting PM2..."
+            # Stop existing process if any
+            pm2 delete chatgenius-nichnarmada || true
+
+            # Start with production environment and proper build
+            export NODE_ENV=production
+            pm2 start npm --name "chatgenius-nichnarmada" -- start
             pm2 save
