@@ -40,6 +40,15 @@ jobs:
     needs: build-test
     runs-on: ubuntu-latest
     steps:
+      - name: Check SSH connection
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: echo "SSH connection successful"
+          debug: true
+
       - name: Deploy to EC2
         uses: appleboy/ssh-action@master
         with:
@@ -49,15 +58,22 @@ jobs:
           script_stop: true
           debug: true
           command_timeout: "30m"
-          retries: 3
-          sleep: 5s
-          timeout: 60s
+          retries: 5
+          sleep: 10s
+          timeout: 120s
           envs: GITHUB_SHA
           script: |
             echo "Starting deployment..."
+            # Check if directory exists
+            if [ ! -d "chatgenius" ]; then
+              echo "Directory not found, cloning repository..."
+              git clone https://github.com/your-username/chatgenius.git
+            fi
+
             cd chatgenius
             echo "Pulling latest changes..."
-            git pull
+            git fetch --all
+            git reset --hard origin/main
 
             echo "Installing dependencies..."
             export NODE_ENV=development
@@ -68,11 +84,11 @@ jobs:
             npm run build
 
             echo "Restarting PM2..."
-            if pm2 restart chatgenius-nichnarmada; then
-              echo "PM2 restart successful"
+            if pm2 list | grep -q "chatgenius-nichnarmada"; then
+              echo "Restarting existing PM2 process..."
+              pm2 restart chatgenius-nichnarmada --update-env
             else
-              echo "PM2 restart failed, attempting fresh start..."
-              pm2 delete all || true
+              echo "Starting new PM2 process..."
               pm2 start npm --name "chatgenius-nichnarmada" -- start
-              pm2 save
             fi
+            pm2 save
