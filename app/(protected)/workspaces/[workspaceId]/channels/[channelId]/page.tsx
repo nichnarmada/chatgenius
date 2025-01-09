@@ -30,6 +30,11 @@ export default async function Page({ params }: PageProps) {
         email,
         display_name,
         avatar_url
+      ),
+      reactions (
+        id,
+        emoji,
+        user_id
       )
     `
     )

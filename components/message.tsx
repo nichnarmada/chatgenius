@@ -6,7 +6,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { MoreHorizontal, Smile } from "lucide-react"
-import { createClient } from "@/utils/supabase/client"
 import { useState } from "react"
 
 const additionalEmojis = [
@@ -42,6 +41,8 @@ interface MessageProps {
   user: User
   reactions?: Reaction[]
   isDM?: boolean
+  onAddReaction: (messageId: string, emoji: string) => Promise<void>
+  onRemoveReaction: (messageId: string, emoji: string) => Promise<void>
 }
 
 export function Message({
@@ -51,38 +52,11 @@ export function Message({
   user,
   reactions = [],
   isDM = false,
+  onAddReaction,
+  onRemoveReaction,
 }: MessageProps) {
-  const supabase = createClient()
   const [isOpen, setIsOpen] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
-
-  async function addReaction(emoji: string) {
-    try {
-      const { error } = await supabase.from("reactions").insert({
-        [isDM ? "dm_message_id" : "message_id"]: id,
-        emoji,
-      })
-
-      if (error) throw error
-    } catch (error) {
-      console.error("Error adding reaction:", error)
-      alert("Failed to add reaction")
-    }
-  }
-
-  async function removeReaction(emoji: string) {
-    try {
-      const { error } = await supabase
-        .from("reactions")
-        .delete()
-        .match({ [isDM ? "dm_message_id" : "message_id"]: id, emoji })
-
-      if (error) throw error
-    } catch (error) {
-      console.error("Error removing reaction:", error)
-      alert("Failed to remove reaction")
-    }
-  }
 
   return (
     <div
@@ -119,7 +93,7 @@ export function Message({
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    addReaction(emoji)
+                    onAddReaction(id, emoji)
                     setIsOpen(false)
                   }}
                 >
@@ -165,7 +139,7 @@ export function Message({
                 ).map(([emoji, count]) => (
                   <span
                     key={emoji}
-                    onClick={() => removeReaction(emoji)}
+                    onClick={() => onRemoveReaction(id, emoji)}
                     className="bg-gray-100 dark:bg-gray-700 rounded-full px-2 py-1 text-sm cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
                   >
                     {emoji} {count}

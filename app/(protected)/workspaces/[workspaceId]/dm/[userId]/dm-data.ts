@@ -47,6 +47,11 @@ export async function getDMData(workspaceId: string, userId: string) {
         email,
         display_name,
         avatar_url
+      ),
+      reactions (
+        id,
+        emoji,
+        user_id
       )
     `
     )

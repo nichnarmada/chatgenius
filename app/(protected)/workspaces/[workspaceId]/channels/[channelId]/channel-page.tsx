@@ -77,7 +77,8 @@ export function ChannelPage({
               profile:user_id (
                 id,
                 email,
-                display_name
+                display_name,
+                avatar_url
               ),
               reactions (
                 id,
@@ -116,6 +117,11 @@ export function ChannelPage({
                   email,
                   display_name,
                   avatar_url
+                ),
+                reactions (
+                  id,
+                  emoji,
+                  user_id
                 )
               `
               )
@@ -146,7 +152,13 @@ export function ChannelPage({
               profile:user_id (
                 id,
                 email,
-                display_name
+                display_name,
+                avatar_url
+              ),
+              reactions (
+                id,
+                emoji,
+                user_id
               )
             `
             )
@@ -227,12 +239,21 @@ export function ChannelPage({
 
   async function addReaction(messageId: string, emoji: string) {
     try {
-      const { error } = await supabase.from("reactions").insert({
-        message_id: messageId,
-        emoji,
+      const response = await fetch("/api/reactions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message_id: messageId,
+          emoji,
+        }),
       })
 
-      if (error) throw error
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || "Failed to add reaction")
+      }
     } catch (error) {
       console.error("Error adding reaction:", error)
       alert("Failed to add reaction")
@@ -241,12 +262,21 @@ export function ChannelPage({
 
   async function removeReaction(messageId: string, emoji: string) {
     try {
-      const { error } = await supabase
-        .from("reactions")
-        .delete()
-        .match({ message_id: messageId, emoji })
+      const response = await fetch("/api/reactions", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message_id: messageId,
+          emoji,
+        }),
+      })
 
-      if (error) throw error
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || "Failed to remove reaction")
+      }
     } catch (error) {
       console.error("Error removing reaction:", error)
       alert("Failed to remove reaction")
@@ -274,6 +304,8 @@ export function ChannelPage({
                 created_at={message.created_at}
                 user={message.profile}
                 reactions={message.reactions}
+                onAddReaction={addReaction}
+                onRemoveReaction={removeReaction}
               />
             ))}
           </div>
