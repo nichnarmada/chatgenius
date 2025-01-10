@@ -43,22 +43,6 @@ export async function signUpAction(formData: FormData) {
     )
   }
 
-  try {
-    // Create initial profile and user status
-    await createUserProfile(
-      data.user.id,
-      email,
-      data.user.user_metadata.temp_display_name
-    )
-  } catch (error) {
-    console.error("Error creating user profile:", error)
-    return encodedRedirect(
-      "error",
-      "/sign-up",
-      "Error creating user profile. Please try again."
-    )
-  }
-
   return redirect("/verify-email")
 }
 
