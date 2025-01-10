@@ -1,21 +1,16 @@
-import type { UserStatusType } from "@/types/user-status"
-import { cn } from "@/lib/utils"
+import { UserStatusType } from "@/types/user-status"
+import { getStatusConfig } from "@/constants/user-status"
 
 interface UserStatusProps {
-  status: UserStatusType | null
+  status?: UserStatusType
+  className?: string
 }
 
-const statusColors = {
-  online: "bg-green-500",
-  offline: "bg-gray-500",
-  away: "bg-yellow-500",
-  busy: "bg-red-500",
-}
-
-export function UserStatus({ status }: UserStatusProps) {
-  if (!status) return null
-
+export function UserStatus({ status = "offline", className }: UserStatusProps) {
+  const statusConfig = getStatusConfig(status)
   return (
-    <div className={cn("w-2.5 h-2.5 rounded-full", statusColors[status])} />
+    <div
+      className={`h-2.5 w-2.5 rounded-full ${statusConfig.color} ${className}`}
+    />
   )
 }

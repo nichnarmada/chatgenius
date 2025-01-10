@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server"
 import { redirect } from "next/navigation"
 import { WorkspaceLayoutClient } from "./layout-client"
+import { USER_STATUS_CONFIG } from "@/constants/user-status"
 
 interface WorkspaceUser {
   user_id: string
@@ -94,7 +95,7 @@ export default async function LayoutWrapper({
     supabase.from("user_status").upsert(
       {
         user_id: user.id,
-        status: "online", // Set to online by default when entering workspace
+        status: USER_STATUS_CONFIG.online.type, // Use constant for online status
       },
       {
         onConflict: "user_id",

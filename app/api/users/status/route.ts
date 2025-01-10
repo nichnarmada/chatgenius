@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server"
 import { NextResponse, type NextRequest } from "next/server"
-import { UserStatusType } from "@/types/user-status"
+import { USER_STATUS_CONFIG, USER_STATUS_ORDER } from "@/constants/user-status"
+import type { UserStatusType } from "@/types/user-status"
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient()
@@ -20,8 +21,8 @@ export async function PATCH(request: NextRequest) {
   const supabase = await createClient()
   const { status } = await request.json()
 
-  // Validate status
-  if (status && !["online", "offline", "away", "busy"].includes(status)) {
+  // Validate status using our constants
+  if (!USER_STATUS_ORDER.includes(status as UserStatusType)) {
     return NextResponse.json({ error: "Invalid status" }, { status: 400 })
   }
 

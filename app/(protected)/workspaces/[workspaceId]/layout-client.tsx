@@ -43,6 +43,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { LeaveWorkspaceModal } from "@/components/modals/leave-workspace-modal"
 import { UserStatus } from "@/components/user-status"
 import type { UserStatusType } from "@/types/user-status"
+import { USER_STATUS_CONFIG, USER_STATUS_ORDER } from "@/constants/user-status"
 
 interface WorkspaceUser {
   id: string
@@ -490,22 +491,20 @@ export function WorkspaceLayoutClient({
                     sideOffset={8}
                     className="min-w-[150px]"
                   >
-                    <DropdownMenuItem onClick={() => updateStatus("online")}>
-                      <div className="h-2.5 w-2.5 rounded-full bg-green-500" />
-                      <span>Online</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => updateStatus("away")}>
-                      <div className="h-2.5 w-2.5 rounded-full bg-yellow-500" />
-                      <span>Away</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => updateStatus("busy")}>
-                      <div className="h-2.5 w-2.5 rounded-full bg-red-500" />
-                      <span>Do Not Disturb</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => updateStatus("offline")}>
-                      <div className="h-2.5 w-2.5 rounded-full bg-gray-500" />
-                      <span>Invisible</span>
-                    </DropdownMenuItem>
+                    {USER_STATUS_ORDER.map((statusKey) => {
+                      const status = USER_STATUS_CONFIG[statusKey]
+                      return (
+                        <DropdownMenuItem
+                          key={status.type}
+                          onClick={() => updateStatus(status.type)}
+                        >
+                          <div
+                            className={`h-2.5 w-2.5 rounded-full ${status.color}`}
+                          />
+                          <span>{status.text}</span>
+                        </DropdownMenuItem>
+                      )
+                    })}
                   </DropdownMenuSubContent>
                 </DropdownMenuPortal>
               </DropdownMenuSub>
