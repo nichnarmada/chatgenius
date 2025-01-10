@@ -1,4 +1,4 @@
-name: Deploy to EC2
+name: Deploy to Vercel
 
 on:
   pull_request:
@@ -9,67 +9,19 @@ on:
 
 jobs:
   deploy:
-    # Only run if the PR was merged (not just closed)
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
-      - name: Check SSH connection
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ec2-user
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: echo "SSH connection successful"
-          debug: true
+      - uses: actions/checkout@v4
 
-      - name: Deploy to EC2
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ec2-user
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script_stop: true
-          debug: true
-          command_timeout: "30m"
-          retries: 5
-          sleep: 10s
-          timeout: 120s
-          envs: |
-            GITHUB_SHA
-            NEXT_PUBLIC_SUPABASE_URL
-            NEXT_PUBLIC_SUPABASE_ANON_KEY
-            SUPABASE_SERVICE_ROLE_KEY
-            NEXT_PUBLIC_BASE_URL
-          script: |
-            set -x
-            echo "Starting deployment..."
-            if [ ! -d "chatgenius" ]; then
-              echo "Directory not found, cloning repository..."
-              git clone https://github.com/nichnarmada/chatgenius.git
-            fi
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
 
-            cd chatgenius
-            echo "Pulling latest changes..."
-            git fetch --all
-            git reset --hard origin/main
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
-            echo "Installing dependencies..."
-            export NODE_ENV=development
-            npm ci
+      - name: Build Project Artifacts
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
-            echo "Building application..."
-            export NODE_ENV=production
-            export NEXT_PUBLIC_SUPABASE_URL="${NEXT_PUBLIC_SUPABASE_URL}"
-            export NEXT_PUBLIC_SUPABASE_ANON_KEY="${NEXT_PUBLIC_SUPABASE_ANON_KEY}"
-            export SUPABASE_SERVICE_ROLE_KEY="${SUPABASE_SERVICE_ROLE_KEY}"
-            export NEXT_PUBLIC_BASE_URL="${NEXT_PUBLIC_BASE_URL}"
-            npm run build
-
-            echo "Starting PM2..."
-            # Stop existing process if any
-            pm2 delete chatgenius-nichnarmada || true
-
-            # Start with production environment and proper build
-            export NODE_ENV=production
-            pm2 start npm --name "chatgenius-nichnarmada" -- start
-            pm2 save
+      - name: Deploy Project Artifacts to Vercel
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
