@@ -29,6 +29,12 @@ docs: https://nextjs.org/docs/app/building-your-application/routing/route-handle
 
 ## Supabase
 
+### SQL Code
+
+The user does not have supabase locally, so you need to send him the sql code to run in the supabase sql editor so that he can manually run it.
+
+### `createServerClient()` function
+
 When calling the createServerClient function, do not write `get` or `set` as they are deprecated. Use `getAll` and `setAll` instead.
 
 ```ts

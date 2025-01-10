@@ -10,12 +10,14 @@ interface ThreadModalProps {
   isOpen: boolean
   onClose: () => void
   parentMessage: MessageType
+  onUpdate: (message: MessageType) => void
 }
 
 export function ThreadModal({
   isOpen,
   onClose,
   parentMessage,
+  onUpdate,
 }: ThreadModalProps) {
   const [threadMessages, setThreadMessages] = useState<ThreadMessageType[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -67,18 +69,19 @@ export function ThreadModal({
 
   const handleAddReaction = async (messageId: string, emoji: string) => {
     try {
-      const response = await fetch(`/api/messages/${messageId}/reactions`, {
+      const response = await fetch("/api/reactions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ emoji }),
+        body: JSON.stringify({
+          thread_message_id: messageId,
+          emoji,
+        }),
       })
       const data = await response.json()
-      if (data.message) {
-        setThreadMessages((prev) =>
-          prev.map((msg) => (msg.id === messageId ? data.message : msg))
-        )
+      if (data.success) {
+        await loadThreadMessages()
       }
     } catch (error) {
       console.error("Error adding reaction:", error)
@@ -87,17 +90,18 @@ export function ThreadModal({
 
   const handleRemoveReaction = async (messageId: string, emoji: string) => {
     try {
-      const response = await fetch(
-        `/api/messages/${messageId}/reactions/${emoji}`,
-        {
-          method: "DELETE",
-        }
-      )
+      const response = await fetch("/api/reactions", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          thread_message_id: messageId,
+          emoji,
+        }),
+      })
       if (response.ok) {
-        const data = await response.json()
-        setThreadMessages((prev) =>
-          prev.map((msg) => (msg.id === messageId ? data.message : msg))
-        )
+        await loadThreadMessages()
       }
     } catch (error) {
       console.error("Error removing reaction:", error)
@@ -115,14 +119,70 @@ export function ThreadModal({
           <div className="border-b pb-4">
             <Message
               message={parentMessage}
-              onUpdate={() => {}}
+              onUpdate={onUpdate}
               onDelete={() => {}}
+              onAddReaction={async (messageId, emoji) => {
+                try {
+                  const response = await fetch("/api/reactions", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                      message_id: messageId,
+                      emoji,
+                    }),
+                  })
+                  if (response.ok) {
+                    // Fetch the updated parent message
+                    const updatedResponse = await fetch(
+                      `/api/messages/${messageId}`
+                    )
+                    if (updatedResponse.ok) {
+                      const { message } = await updatedResponse.json()
+                      if (message) {
+                        onUpdate(message)
+                      }
+                    }
+                  }
+                } catch (error) {
+                  console.error("Error adding reaction:", error)
+                }
+              }}
+              onRemoveReaction={async (messageId, emoji) => {
+                try {
+                  const response = await fetch("/api/reactions", {
+                    method: "DELETE",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                      message_id: messageId,
+                      emoji,
+                    }),
+                  })
+                  if (response.ok) {
+                    // Fetch the updated parent message
+                    const updatedResponse = await fetch(
+                      `/api/messages/${messageId}`
+                    )
+                    if (updatedResponse.ok) {
+                      const { message } = await updatedResponse.json()
+                      if (message) {
+                        onUpdate(message)
+                      }
+                    }
+                  }
+                } catch (error) {
+                  console.error("Error removing reaction:", error)
+                }
+              }}
               showThread={false}
             />
           </div>
 
           {/* Thread Messages */}
-          <div className="space-y-4">
+          <div>
             {isLoading ? (
               <div className="text-center">Loading replies...</div>
             ) : threadMessages.length > 0 ? (

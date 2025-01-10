@@ -4,10 +4,11 @@ import { NextResponse } from "next/server"
 
 export async function POST(request: Request) {
   try {
-    const { message_id, dm_message_id, emoji } = await request.json()
+    const { message_id, dm_message_id, thread_message_id, emoji } =
+      await request.json()
 
     // Validate input
-    if (!emoji || (!message_id && !dm_message_id)) {
+    if (!emoji || (!message_id && !dm_message_id && !thread_message_id)) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -40,6 +41,7 @@ export async function POST(request: Request) {
     const { error } = await supabase.from("reactions").insert({
       message_id,
       dm_message_id,
+      thread_message_id,
       emoji,
       user_id: session.user.id,
     })
@@ -64,10 +66,11 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const { message_id, dm_message_id, emoji } = await request.json()
+    const { message_id, dm_message_id, thread_message_id, emoji } =
+      await request.json()
 
     // Validate input
-    if (!emoji || (!message_id && !dm_message_id)) {
+    if (!emoji || (!message_id && !dm_message_id && !thread_message_id)) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -101,7 +104,11 @@ export async function DELETE(request: Request) {
       .from("reactions")
       .delete()
       .match({
-        ...(message_id ? { message_id } : { dm_message_id }),
+        ...(message_id
+          ? { message_id }
+          : dm_message_id
+            ? { dm_message_id }
+            : { thread_message_id }),
         emoji,
         user_id: session.user.id,
       })

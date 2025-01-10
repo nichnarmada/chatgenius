@@ -307,6 +307,7 @@ export function Message({
           isOpen={isThreadOpen}
           onClose={() => setIsThreadOpen(false)}
           parentMessage={message as any}
+          onUpdate={onUpdate}
         />
       )}
     </>
