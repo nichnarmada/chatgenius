@@ -8,22 +8,11 @@ export async function createUserProfile(
 ) {
   const supabase = await createClient()
 
-  // Check if profile already exists
-  const { data: existingProfile } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("id", userId)
-    .single()
-
-  if (existingProfile) {
-    return
-  }
-
-  // Create new profile and user status in a transaction
+  // Call the create_new_user stored procedure
   const { error } = await supabase.rpc("create_new_user", {
     p_user_id: userId,
     p_email: email,
-    p_display_name: displayName || email,
+    p_display_name: displayName || email.split("@")[0],
     p_initial_status: USER_STATUS_CONFIG.offline.type,
   })
 

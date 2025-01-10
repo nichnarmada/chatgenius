@@ -62,22 +62,29 @@ export default function SetupProfilePage() {
       }
 
       // Check if profile exists
-      const { data: profiles } = await supabase
+      const { data: profile, error: fetchError } = await supabase
         .from("profiles")
-        .select("id")
+        .select("*")
         .eq("id", user.id)
+        .single()
 
-      const profileExists = profiles && profiles.length > 0
+      if (fetchError && fetchError.code !== "PGRST116") {
+        throw fetchError
+      }
 
-      if (!profileExists) {
+      if (!profile) {
         // Create profile if it doesn't exist
-        const { error: createError } = await supabase.from("profiles").insert({
-          id: user.id,
-          email: user.email,
-          display_name: displayName,
-          avatar_url: avatarUrl,
-          is_profile_setup: true,
-        })
+        const { error: createError } = await supabase
+          .from("profiles")
+          .insert({
+            id: user.id,
+            email: user.email,
+            display_name: displayName,
+            avatar_url: avatarUrl,
+            is_profile_setup: true,
+          })
+          .single()
+
         if (createError) throw createError
       } else {
         // Update existing profile
@@ -89,15 +96,24 @@ export default function SetupProfilePage() {
             is_profile_setup: true,
           })
           .eq("id", user.id)
+          .single()
+
         if (updateError) throw updateError
       }
 
+      toast({
+        title: "Success",
+        description: "Profile updated successfully!",
+      })
       router.push("/workspaces")
     } catch (error) {
       console.error("Error:", error)
       toast({
         title: "Error",
-        description: "Failed to update profile. Please try again.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to update profile. Please try again.",
         variant: "destructive",
       })
     } finally {

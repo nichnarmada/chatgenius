@@ -44,6 +44,7 @@ export async function signUpAction(formData: FormData) {
   }
 
   try {
+    // Create initial profile and user status
     await createUserProfile(
       data.user.id,
       email,
