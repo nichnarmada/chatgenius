@@ -47,7 +47,88 @@ export function ChannelPage({
 
   useEffect(() => {
     const messageChannel = supabase
-      .channel("messages")
+      .channel(`channel_messages:${channel.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "messages",
+          filter: `channel_id=eq.${channel.id}`,
+        },
+        async (payload) => {
+          console.log("Message change received:", payload)
+
+          if (payload.eventType === "INSERT") {
+            // Only add the message if it's not already in the state
+            if (!messages.some((msg) => msg.id === payload.new.id)) {
+              // Fetch the complete message with user data
+              const { data: message } = await supabase
+                .from("messages")
+                .select(
+                  `
+                  *,
+                  profile:user_id (
+                    id,
+                    email,
+                    display_name,
+                    avatar_url
+                  ),
+                  reactions (
+                    id,
+                    emoji,
+                    user_id
+                  )
+                `
+                )
+                .eq("id", payload.new.id)
+                .single()
+
+              if (message) {
+                setMessages((prev) => [...prev, message as Message])
+                // Scroll to bottom when new message arrives
+                if (scrollRef.current) {
+                  scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+                }
+              }
+            }
+          } else if (payload.eventType === "UPDATE") {
+            // Fetch the updated message with user data
+            const { data: message } = await supabase
+              .from("messages")
+              .select(
+                `
+                *,
+                profile:user_id (
+                  id,
+                  email,
+                  display_name,
+                  avatar_url
+                ),
+                reactions (
+                  id,
+                  emoji,
+                  user_id
+                )
+              `
+              )
+              .eq("id", payload.new.id)
+              .single()
+
+            if (message) {
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === message.id ? (message as Message) : msg
+                )
+              )
+            }
+          } else if (payload.eventType === "DELETE") {
+            setMessages((prev) =>
+              prev.filter((msg) => msg.id !== payload.old.id)
+            )
+          }
+        }
+      )
       .on(
         "postgres_changes",
         {
@@ -84,103 +165,16 @@ export function ChannelPage({
           }
         }
       )
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
-          filter: `channel_id=eq.${channel.id}`,
-        },
-        async (payload) => {
-          // Only add the message if it's not already in the state
-          if (!messages.some((msg) => msg.id === payload.new.id)) {
-            // Fetch the complete message with user data
-            const { data: message } = await supabase
-              .from("messages")
-              .select(
-                `
-                *,
-                profile:user_id (
-                  id,
-                  email,
-                  display_name,
-                  avatar_url
-                ),
-                reactions (
-                  id,
-                  emoji,
-                  user_id
-                )
-              `
-              )
-              .eq("id", payload.new.id)
-              .single()
-
-            if (message) {
-              setMessages((prev) => [...prev, message as Message])
-            }
-          }
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          console.log("Subscribed to channel messages:", channel.id)
         }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "messages",
-          filter: `channel_id=eq.${channel.id}`,
-        },
-        async (payload) => {
-          // Fetch the updated message with user data
-          const { data: message } = await supabase
-            .from("messages")
-            .select(
-              `
-              *,
-              profile:user_id (
-                id,
-                email,
-                display_name,
-                avatar_url
-              ),
-              reactions (
-                id,
-                emoji,
-                user_id
-              )
-            `
-            )
-            .eq("id", payload.new.id)
-            .single()
-
-          if (message) {
-            setMessages((prev) =>
-              prev.map((msg) =>
-                msg.id === message.id ? (message as Message) : msg
-              )
-            )
-          }
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "DELETE",
-          schema: "public",
-          table: "messages",
-          filter: `channel_id=eq.${channel.id}`,
-        },
-        (payload) => {
-          setMessages((prev) => prev.filter((msg) => msg.id !== payload.old.id))
-        }
-      )
-      .subscribe()
+      })
 
     return () => {
       supabase.removeChannel(messageChannel)
     }
-  }, [channel.id, supabase])
+  }, [channel.id, messages, supabase])
 
   useEffect(() => {
     if (scrollRef.current) {

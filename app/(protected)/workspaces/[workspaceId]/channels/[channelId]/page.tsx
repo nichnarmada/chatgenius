@@ -40,6 +40,7 @@ export default async function Page({ params }: PageProps) {
     )
     .eq("channel_id", resolvedParams.channelId)
     .order("created_at", { ascending: true })
+    .limit(50)
 
   return <ChannelPage channel={channel} messages={messages || []} />
 }
