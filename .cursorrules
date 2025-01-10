@@ -31,7 +31,7 @@ docs: https://nextjs.org/docs/app/building-your-application/routing/route-handle
 
 ### SQL Code
 
-The user does not have supabase locally, so you need to send him the sql code to run in the supabase sql editor so that he can manually run it.
+The user does not have supabase locally, so you need to send him the sql code in the form of a code block to make it easy to copy paste into the supabase sql editor so that he can manually run it. Don't make any new files, just send the sql code.
 
 ### `createServerClient()` function
 

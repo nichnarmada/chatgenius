@@ -15,6 +15,7 @@ import {
   Settings,
   ArrowLeftRight,
   DoorOpen,
+  Circle,
 } from "lucide-react"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -24,6 +25,10 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
+  DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { SignOutModal } from "@/components/modals/sign-out-modal"
@@ -36,6 +41,8 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import Image from "next/image"
 import { useToast } from "@/components/ui/use-toast"
 import { LeaveWorkspaceModal } from "@/components/modals/leave-workspace-modal"
+import { UserStatus } from "@/components/user-status"
+import type { UserStatusType } from "@/types/user-status"
 
 interface WorkspaceUser {
   id: string
@@ -102,6 +109,9 @@ export function WorkspaceLayoutClient({
   workspaceUsers,
 }: WorkspaceLayoutClientProps) {
   const [workspace, setWorkspace] = useState(initialWorkspace)
+  const [userStatuses, setUserStatuses] = useState<
+    Record<string, UserStatusType>
+  >({})
   const [showSignOutModal, setShowSignOutModal] = useState(false)
   const [showLeaveWorkspaceModal, setShowLeaveWorkspaceModal] = useState(false)
   const [isCreateChannelOpen, setIsCreateChannelOpen] = useState(false)
@@ -115,6 +125,51 @@ export function WorkspaceLayoutClient({
   const pathname = usePathname()
   const supabase = createClient()
   const { toast } = useToast()
+
+  useEffect(() => {
+    const fetchStatuses = async () => {
+      const { data: statuses } = await supabase
+        .from("user_status")
+        .select("user_id, status")
+
+      if (statuses) {
+        const statusMap = statuses.reduce(
+          (acc, curr) => {
+            acc[curr.user_id] = curr.status
+            return acc
+          },
+          {} as Record<string, UserStatusType>
+        )
+        setUserStatuses(statusMap)
+      }
+    }
+
+    fetchStatuses()
+
+    const statusChannel = supabase
+      .channel("user_statuses")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "user_status",
+        },
+        (payload) => {
+          if (payload.new) {
+            setUserStatuses((prev) => ({
+              ...prev,
+              [(payload.new as any).user_id]: (payload.new as any).status,
+            }))
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(statusChannel)
+    }
+  }, [])
 
   useEffect(() => {
     const workspaceChannel = supabase
@@ -189,8 +244,50 @@ export function WorkspaceLayoutClient({
   }
 
   const handleSignOut = async () => {
+    // Update status to offline and remove session before signing out
+    await Promise.all([
+      supabase
+        .from("user_status")
+        .update({ status: "offline" })
+        .eq("user_id", user.id),
+      supabase.from("user_sessions").delete().eq("user_id", user.id),
+    ])
+
     await supabase.auth.signOut()
     router.push("/login")
+  }
+
+  const updateStatus = async (status: UserStatusType) => {
+    try {
+      const response = await fetch("/api/users/status", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to update status")
+      }
+
+      // Update local state immediately
+      setUserStatuses((prev) => ({
+        ...prev,
+        [user.id]: status,
+      }))
+
+      toast({
+        title: "Status updated",
+        description: `Your status is now ${status}`,
+      })
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update status",
+      })
+    }
   }
 
   return (
@@ -314,13 +411,20 @@ export function WorkspaceLayoutClient({
                         href={`/workspaces/${workspace.id}/dm/${workspaceUser.id}`}
                       >
                         <div className="flex items-center gap-2">
-                          <Avatar className="h-5 w-5">
-                            <AvatarImage src={workspaceUser.avatar_url} />
-                            <AvatarFallback>
-                              {workspaceUser.display_name?.charAt(0) ||
-                                workspaceUser.email?.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
+                          <div className="relative">
+                            <Avatar className="h-5 w-5">
+                              <AvatarImage src={workspaceUser.avatar_url} />
+                              <AvatarFallback>
+                                {workspaceUser.display_name?.charAt(0) ||
+                                  workspaceUser.email?.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="absolute -bottom-0.5 -right-0.5">
+                              <UserStatus
+                                status={userStatuses[workspaceUser.id]}
+                              />
+                            </div>
+                          </div>
                           <span className="truncate">
                             {workspaceUser.display_name || workspaceUser.email}
                           </span>
@@ -334,7 +438,7 @@ export function WorkspaceLayoutClient({
         </div>
 
         {/* Invite Users Button */}
-        <div className="px-4 py-2">
+        {/* <div className="px-4 py-2">
           <Button
             variant="outline"
             className="w-full justify-start"
@@ -343,28 +447,29 @@ export function WorkspaceLayoutClient({
             <UserPlus className="mr-2 h-4 w-4" />
             Invite Others
           </Button>
-        </div>
+        </div> */}
 
         {/* User Profile Section */}
         <div className="h-[60px] min-h-[60px] border-t">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                className="w-full h-full px-4 justify-start"
-              >
-                <div className="flex items-center justify-between w-full">
-                  <div className="flex items-center gap-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={profile?.avatar_url} />
-                      <AvatarFallback>
-                        {profile?.display_name?.[0]?.toUpperCase() ||
-                          user?.email?.[0]?.toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col items-start">
-                      <span className="font-medium">
-                        {profile?.display_name || user?.email}
+              <Button variant="ghost" className="w-full h-full px-4">
+                <div className="flex items-center gap-2 w-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={profile?.avatar_url} />
+                    <AvatarFallback>
+                      {profile?.display_name?.charAt(0) ||
+                        profile?.email?.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col flex-1 items-start">
+                    <span className="text-sm font-medium">
+                      {profile?.display_name || profile?.email}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <UserStatus status={userStatuses[user.id]} />
+                      <span className="text-xs text-muted-foreground capitalize">
+                        {userStatuses[user.id] || "offline"}
                       </span>
                     </div>
                   </div>
@@ -372,7 +477,39 @@ export function WorkspaceLayoutClient({
                 </div>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="center" className="w-56">
+            <DropdownMenuContent align="center" sideOffset={4} className="w-56">
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <div className="flex items-center gap-2">
+                    <UserStatus status={userStatuses[user.id]} />
+                    <span>Set a status</span>
+                  </div>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent
+                    sideOffset={8}
+                    className="min-w-[150px]"
+                  >
+                    <DropdownMenuItem onClick={() => updateStatus("online")}>
+                      <div className="h-2.5 w-2.5 rounded-full bg-green-500" />
+                      <span>Online</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => updateStatus("away")}>
+                      <div className="h-2.5 w-2.5 rounded-full bg-yellow-500" />
+                      <span>Away</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => updateStatus("busy")}>
+                      <div className="h-2.5 w-2.5 rounded-full bg-red-500" />
+                      <span>Do Not Disturb</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => updateStatus("offline")}>
+                      <div className="h-2.5 w-2.5 rounded-full bg-gray-500" />
+                      <span>Invisible</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={() => setShowProfileModal(true)}>
                 <div className="flex items-center w-full">
                   <Settings className="mr-2 h-4 w-4" />

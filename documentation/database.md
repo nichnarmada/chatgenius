@@ -41,7 +41,7 @@ This document outlines the database schema for our chat/messaging system impleme
 - `created_at` (timestamptz)
 - `updated_at` (timestamptz)
 - `content_search` (tsvector)
-- `thread_count` (integer, default: 0)
+- `thread_count` (int)
 
 ### Thread Messages
 
@@ -58,6 +58,7 @@ This document outlines the database schema for our chat/messaging system impleme
 - `id` (uuid, PK)
 - `message_id` (uuid, FK → messages.id)
 - `dm_message_id` (uuid, FK → direct_messages.id)
+- `thread_message_id` (uuid, FK → thread_messages.id)
 - `user_id` (uuid, FK → auth.users.id)
 - `emoji` (text)
 - `created_at` (timestamptz)
@@ -91,13 +92,6 @@ This document outlines the database schema for our chat/messaging system impleme
 - `created_at` (timestamptz)
 - `accepted_at` (timestamptz, nullable)
 
-### Thread Messages
-
-- SELECT: Users can view thread messages in their channels
-- INSERT: Users can reply in threads in their channels
-- UPDATE: Users can update their own thread messages
-- DELETE: Users can delete their own thread messages
-
 ## Row Level Security (RLS) Policies
 
 ### Workspaces
@@ -128,9 +122,14 @@ This document outlines the database schema for our chat/messaging system impleme
 - UPDATE: Users can update their own messages
 - DELETE: Users can delete their own messages
 
-### Direct Messages
+### Thread Messages (applied to `public` role)
 
-Applied to `public` role:
+- SELECT: Users can view thread messages in their channels
+- INSERT: Users can reply in threads in their channels
+- UPDATE: Users can update their own thread messages
+- DELETE: Users can delete their own thread messages
+
+### Direct Messages (applied to `public` role)
 
 - SELECT: Users can view their direct messages
 - INSERT: Users can send direct messages
@@ -147,12 +146,12 @@ Applied to `public` role:
 - INSERT: Members can create invites
 - DELETE: Members can delete invites
 
-### Thread Messages
+### Reactions
 
-- SELECT: Users can view thread messages in their channels
-- INSERT: Users can reply in threads in their channels
-- UPDATE: Users can update their own thread messages
-- DELETE: Users can delete their own thread messages
+- SELECT: Users can see reactions on messages they can see
+- INSERT: Users can add reactions to messages they can see
+- DELETE: Users can delete their own reactions
+- ALL: Users can react to thread messages in their channels
 
 ## Enums
 
@@ -160,6 +159,13 @@ Applied to `public` role:
 
 - `owner`
 - `member`
+
+### user_status_type
+
+- `online`
+- `offline`
+- `away`
+- `busy`
 
 ## Indexes
 
@@ -176,12 +182,14 @@ Consider adding indexes for:
 - All timestamps use timestamptz for timezone awareness
 - Primary and foreign keys use UUIDs
 - Workspace roles are limited to 'owner' and 'member'
-- Message content is indexed using tsvector for full-text search
-- Reactions can be attached to both regular messages and direct messages
+- Messages and thread messages use tsvector for full-text search
+- Messages track thread count for UI purposes
+- Reactions can be attached to regular messages, direct messages, and thread messages
+- Thread messages maintain their own content search index
 
 ## Future Considerations
 
-1. Message reactions/emoji support
+1. ~~Message reactions/emoji support~~
 2. ~~Message threading~~
 3. Channel categories/organization
 4. User presence system
