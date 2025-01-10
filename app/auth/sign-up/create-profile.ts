@@ -1,4 +1,5 @@
 import { createClient } from "@/utils/supabase/server"
+import { USER_STATUS_CONFIG } from "@/constants/user-status"
 
 export async function createUserProfile(
   userId: string,
@@ -18,18 +19,16 @@ export async function createUserProfile(
     return
   }
 
-  // Create new profile
-  const { error } = await supabase.from("profiles").insert([
-    {
-      id: userId,
-      email,
-      display_name: displayName || email,
-      is_profile_setup: false,
-    },
-  ])
+  // Create new profile and user status in a transaction
+  const { error } = await supabase.rpc("create_new_user", {
+    p_user_id: userId,
+    p_email: email,
+    p_display_name: displayName || email,
+    p_initial_status: USER_STATUS_CONFIG.offline.type,
+  })
 
   if (error) {
-    console.error("Error creating profile:", error)
+    console.error("Error creating user:", error)
     throw error
   }
 }
