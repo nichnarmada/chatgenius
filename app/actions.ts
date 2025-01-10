@@ -4,7 +4,6 @@ import { encodedRedirect } from "@/utils/utils"
 import { createClient } from "@/utils/supabase/server"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
-import { createUserProfile } from "@/app/auth/sign-up/create-profile"
 
 export async function signUpAction(formData: FormData) {
   const headersList = await headers()
