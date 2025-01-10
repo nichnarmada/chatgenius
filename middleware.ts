@@ -35,28 +35,22 @@ export async function middleware(request: NextRequest) {
 
   // If user is authenticated and making a request to the app
   if (user && !request.nextUrl.pathname.startsWith("/api")) {
-    // Update user status to online and update session
-    await Promise.all([
-      supabase
-        .from("user_status")
-        .update({ status: "online" })
-        .eq("user_id", user.id),
-      supabase.from("user_sessions").upsert(
-        { user_id: user.id },
-        {
-          onConflict: "user_id",
-          ignoreDuplicates: false,
-        }
-      ),
-    ])
+    // Only update the session, don't change status
+    await supabase.from("user_sessions").upsert(
+      { user_id: user.id },
+      {
+        onConflict: "user_id",
+        ignoreDuplicates: false,
+      }
+    )
   }
 
-  // Handle authentication and redirects
   if (
     !user &&
     !request.nextUrl.pathname.startsWith("/login") &&
     !request.nextUrl.pathname.startsWith("/auth")
   ) {
+    // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone()
     url.pathname = "/login"
     return NextResponse.redirect(url)
