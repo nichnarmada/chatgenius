@@ -153,8 +153,8 @@ export function Message({
       <div className="group relative flex gap-3 px-4 py-2 hover:bg-muted/50">
         {/* Reaction and Action Buttons */}
         <div className="absolute right-2 -top-3 flex items-center gap-0.5 transition-opacity duration-200 bg-background shadow-sm rounded-md border z-10 opacity-0 group-hover:opacity-100">
-          {/* Thread Button - For creating new threads */}
-          {showThread && (
+          {/* Thread Button - Only show for channel messages */}
+          {!isDM && showThread && (
             <Button
               variant="ghost"
               size="sm"
@@ -285,8 +285,9 @@ export function Message({
               </>
             )}
 
-            {/* Thread Count - Only show if there are replies */}
-            {showThread &&
+            {/* Thread Count - Only show for channel messages */}
+            {!isDM &&
+              showThread &&
               message.thread_count != null &&
               message.thread_count > 0 && (
                 <button
@@ -302,7 +303,8 @@ export function Message({
         </div>
       </div>
 
-      {showThread && (
+      {/* Thread Modal - Only render for channel messages */}
+      {!isDM && showThread && (
         <ThreadModal
           isOpen={isThreadOpen}
           onClose={() => setIsThreadOpen(false)}
