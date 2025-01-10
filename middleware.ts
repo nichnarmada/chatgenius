@@ -35,7 +35,26 @@ export async function middleware(request: NextRequest) {
 
   // If user is authenticated and making a request to the app
   if (user && !request.nextUrl.pathname.startsWith("/api")) {
-    // Only update the session, don't change status
+    // Check if profile exists and is set up
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_profile_setup")
+      .eq("id", user.id)
+      .single()
+
+    // If profile doesn't exist or is not set up, redirect to setup-profile
+    // unless they're already on the setup-profile page
+    if (
+      (!profile || profile.is_profile_setup === false) &&
+      !request.nextUrl.pathname.startsWith("/setup-profile") &&
+      !request.nextUrl.pathname.startsWith("/auth")
+    ) {
+      const url = request.nextUrl.clone()
+      url.pathname = "/setup-profile"
+      return NextResponse.redirect(url)
+    }
+
+    // Update session
     await supabase.from("user_sessions").upsert(
       { user_id: user.id },
       {
@@ -45,12 +64,14 @@ export async function middleware(request: NextRequest) {
     )
   }
 
+  // DO NOT DELETE THESE LINES AND COMMENTS
   if (
     !user &&
-    !request.nextUrl.pathname.startsWith("/login") && //login page, found in /app/(protected)/login/page.tsx, DO NOT DELETE
-    !request.nextUrl.pathname.startsWith("/sign-up") && //sign up page, found in /app/(protected)/sign-up/page.tsx, DO NOT DELETE
-    !request.nextUrl.pathname.startsWith("/forgot-password") && //forgot password page, found in /app/(protected)/forgot-password/page.tsx, DO NOT DELETE
-    !request.nextUrl.pathname.startsWith("/auth") //auth page, found in /app/(protected)/auth/page.tsx, DO NOT DELETE
+    !request.nextUrl.pathname.startsWith("/login") && //login page, found in /app/(auth-pages)/login/page.tsx, DO NOT DELETE
+    !request.nextUrl.pathname.startsWith("/sign-up") && //sign up page, found in /app/(auth-pages)/sign-up/page.tsx, DO NOT DELETE
+    !request.nextUrl.pathname.startsWith("/forgot-password") && //forgot password page, found in /app/(auth-pages)/forgot-password/page.tsx, DO NOT DELETE
+    !request.nextUrl.pathname.startsWith("/verify-email") && //verify email page, found in /app/(auth-pages)/verify-email/page.tsx, DO NOT DELETE
+    !request.nextUrl.pathname.startsWith("/auth") //auth handling callback api routes, DO NOT DELETE
   ) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone()

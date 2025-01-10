@@ -11,9 +11,8 @@ export async function signUpAction(formData: FormData) {
   const origin = headersList.get("origin")
   const email = formData.get("email") as string
   const password = formData.get("password") as string
-  const name = formData.get("name") as string
 
-  if (!email || !password || !name) {
+  if (!email || !password) {
     return encodedRedirect("error", "/sign-up", "All fields are required")
   }
 
@@ -23,9 +22,10 @@ export async function signUpAction(formData: FormData) {
     email,
     password,
     options: {
-      emailRedirectTo: `${origin}/auth/callback`,
+      emailRedirectTo: `${origin}/auth/callback?next=/setup-profile`,
       data: {
-        display_name: name,
+        email: email,
+        temp_display_name: email.split("@")[0],
       },
     },
   })
@@ -35,36 +35,15 @@ export async function signUpAction(formData: FormData) {
     return encodedRedirect("error", "/sign-up", error.message)
   }
 
-  if (data?.user) {
-    try {
-      await createUserProfile(data.user.id, email, name)
-
-      // Check if email confirmation is required
-      if (data.user.identities?.length === 0) {
-        return encodedRedirect(
-          "success",
-          "/sign-up",
-          "Please check your email to confirm your account."
-        )
-      } else {
-        // Email confirmation not required or already confirmed
-        return redirect("/workspaces")
-      }
-    } catch (error) {
-      console.error("Error creating profile:", error)
-      return encodedRedirect(
-        "error",
-        "/sign-up",
-        "Account created but there was an error setting up your profile"
-      )
-    }
+  if (!data?.user) {
+    return encodedRedirect(
+      "error",
+      "/sign-up",
+      "Something went wrong. Please try again."
+    )
   }
 
-  return encodedRedirect(
-    "error",
-    "/sign-up",
-    "Something went wrong. Please try again."
-  )
+  return redirect("/verify-email")
 }
 
 export const signInAction = async (formData: FormData) => {

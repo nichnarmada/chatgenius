@@ -24,6 +24,7 @@ export async function createUserProfile(
       id: userId,
       email,
       display_name: displayName || email,
+      is_profile_setup: false,
     },
   ])
 

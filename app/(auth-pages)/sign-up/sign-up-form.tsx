@@ -30,17 +30,6 @@ export function SignUpForm({ messageParams }: SignUpFormProps) {
     <>
       <form className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="name">Name</Label>
-          <Input
-            id="name"
-            name="name"
-            type="text"
-            placeholder="Enter your name"
-            required
-          />
-        </div>
-
-        <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input
             id="email"
