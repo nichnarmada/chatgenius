@@ -1,5 +1,7 @@
 # Cursor Rules
 
+Only supabase's sql code should be sent in code blocks. The other code should still use the `edit_file`.
+
 ## Project's Database Schema
 
 Refer to the [database schema documentation](./documentation/database.md) for the most updated project's database schema.
