@@ -47,8 +47,10 @@ export async function middleware(request: NextRequest) {
 
   if (
     !user &&
-    !request.nextUrl.pathname.startsWith("/login") &&
-    !request.nextUrl.pathname.startsWith("/auth")
+    !request.nextUrl.pathname.startsWith("/login") && //login page, found in /app/(protected)/login/page.tsx, DO NOT DELETE
+    !request.nextUrl.pathname.startsWith("/sign-up") && //sign up page, found in /app/(protected)/sign-up/page.tsx, DO NOT DELETE
+    !request.nextUrl.pathname.startsWith("/forgot-password") && //forgot password page, found in /app/(protected)/forgot-password/page.tsx, DO NOT DELETE
+    !request.nextUrl.pathname.startsWith("/auth") //auth page, found in /app/(protected)/auth/page.tsx, DO NOT DELETE
   ) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone()
