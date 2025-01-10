@@ -79,6 +79,30 @@ export default async function LayoutWrapper({
     avatar_url: profile.avatar_url,
   }))
 
+  // Set/update session and status on workspace entry
+  await Promise.all([
+    supabase.from("user_sessions").upsert(
+      {
+        user_id: user.id,
+        last_seen_at: new Date().toISOString(),
+      },
+      {
+        onConflict: "user_id",
+        ignoreDuplicates: false,
+      }
+    ),
+    supabase.from("user_status").upsert(
+      {
+        user_id: user.id,
+        status: "online", // Set to online by default when entering workspace
+      },
+      {
+        onConflict: "user_id",
+        ignoreDuplicates: false,
+      }
+    ),
+  ])
+
   return (
     <WorkspaceLayoutClient
       workspace={workspace}

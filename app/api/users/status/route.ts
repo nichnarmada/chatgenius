@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   const supabase = await createClient()
-  const { status, custom_status } = await request.json()
+  const { status } = await request.json()
 
   // Validate status
   if (status && !["online", "offline", "away", "busy"].includes(status)) {
@@ -34,23 +34,36 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  // Update both status and user_sessions
+  // Update both status and last_active_status if not going offline
+  const statusUpdate =
+    status === "offline" ? { status } : { status, last_active_status: status }
+
+  // Update status and ensure session is active
   const [{ data, error }, sessionResult] = await Promise.all([
     supabase
       .from("user_status")
-      .update({
-        status: status as UserStatusType,
-        custom_status: custom_status || null,
-      })
-      .eq("user_id", user.id)
-      .select("*")
-      .single(),
-    supabase
-      .from("user_sessions")
       .upsert(
-        { user_id: user.id },
-        { onConflict: "user_id", ignoreDuplicates: false }
-      ),
+        {
+          user_id: user.id,
+          ...statusUpdate,
+        },
+        {
+          onConflict: "user_id",
+          ignoreDuplicates: false,
+        }
+      )
+      .select()
+      .single(),
+    supabase.from("user_sessions").upsert(
+      {
+        user_id: user.id,
+        last_seen_at: new Date().toISOString(),
+      },
+      {
+        onConflict: "user_id",
+        ignoreDuplicates: false,
+      }
+    ),
   ])
 
   if (error) {
