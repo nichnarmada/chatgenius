@@ -1,8 +1,43 @@
 # Cursor Rules
 
-## NextJS API Route Handlers
+## Project's Database Schema
 
-when writing api routes, do not write params as an argument, instead write them as a variable like the following:
+Refer to the [database schema documentation](./documentation/database.md) for the most updated project's database schema.
+
+## Project Folder Structure
+
+### Components
+
+- All new components should be added to the /components folder
+- Components should not have any logic (API calls, database queries, etc.), they should only be presentational
+
+The /components/ui folder is reserved for components that are part of the Shadcn UI library.
+
+Components that are not part of the Shadcn UI library should be added to the /components folder, and may use the /components/ui folder for shared components.
+
+### Pages
+
+Following the NextJS convention, all new pages should be added to the /app folder.
+
+- Auth pages should be added to the /app/(auth-pages) folder
+- Pages related to the workspace should be added to the /app/(protected) folder
+  - A "Page" in this folder would consist of a layout.tsx file and a page.tsx file.
+
+If the layout.tsx file or page.tsx file has both server and client side logic, split them into 3 files:
+
+- page.tsx
+- page-wrapper.tsx (handles all the server side logic)
+- page-client.tsx (handles all the presentational side of the page)
+
+### API Routes
+
+- All new api routes should be added to the /app/api folder
+
+## NextJS
+
+### API Route Handlers
+
+When writing api routes, do not write params as an argument, instead write them as a variable like the following:
 
 ```ts
 import { type NextRequest } from "next/server"
