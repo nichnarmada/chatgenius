@@ -249,41 +249,40 @@ export function DMPage({
       </div>
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto py-4">
-        <div className="flex flex-col min-h-full">
-          <div className="px-4">
-            {messages?.map((message) => (
-              <Message
-                key={message.id}
-                message={message}
-                onUpdate={(updatedMessage) => {
-                  setMessages((prev) =>
-                    prev.map((msg) =>
-                      msg.id === updatedMessage.id
-                        ? (updatedMessage as DirectMessage)
-                        : msg
-                    )
+      <div className="flex-1 overflow-y-auto" ref={scrollRef}>
+        <div className="py-4">
+          {messages.map((message) => (
+            <Message
+              key={message.id}
+              message={message}
+              onUpdate={(updatedMessage) => {
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === updatedMessage.id
+                      ? (updatedMessage as DirectMessage)
+                      : msg
                   )
-                }}
-                onDelete={(messageId) => {
-                  setMessages((prev) =>
-                    prev.filter((msg) => msg.id !== messageId)
-                  )
-                }}
-                onAddReaction={addReaction}
-                onRemoveReaction={removeReaction}
-                isDM
-              />
-            ))}
-          </div>
+                )
+              }}
+              onDelete={(messageId) => {
+                setMessages((prev) =>
+                  prev.filter((msg) => msg.id !== messageId)
+                )
+              }}
+              onAddReaction={addReaction}
+              onRemoveReaction={removeReaction}
+            />
+          ))}
         </div>
       </div>
 
       {/* Message Input */}
-      <DMChatInput
-        recipientName={otherUser.display_name || otherUser.email}
-        onSubmit={handleSubmit}
-      />
+      <div className="p-4 border-t">
+        <DMChatInput
+          onSubmit={handleSubmit}
+          recipientName={otherUser.display_name || otherUser.email}
+        />
+      </div>
     </div>
   )
 }

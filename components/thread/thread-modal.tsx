@@ -1,4 +1,4 @@
-import { Message as MessageType } from "@/types/message"
+import { Message as MessageType, BaseMessage } from "@/types/message"
 import { ThreadMessage as ThreadMessageType } from "@/types/thread"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog"
 import { Message } from "../message"
@@ -119,9 +119,9 @@ export function ThreadModal({
           <div className="border-b pb-4">
             <Message
               message={parentMessage}
-              onUpdate={(updatedMessage) =>
+              onUpdate={(updatedMessage) => {
                 onUpdate(updatedMessage as MessageType)
-              }
+              }}
               onDelete={() => {}}
               onAddReaction={async (messageId, emoji) => {
                 try {

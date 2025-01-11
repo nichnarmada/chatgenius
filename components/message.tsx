@@ -20,6 +20,7 @@ import { MessageInput } from "./chat-input"
 import { ThreadModal } from "./thread/thread-modal"
 import { createClient } from "@/utils/supabase/client"
 import {
+  BaseMessage,
   Message as MessageType,
   DirectMessage,
   Reaction,
@@ -45,7 +46,6 @@ interface MessageProps {
   onDelete: (messageId: string) => void
   onAddReaction?: (messageId: string, emoji: string) => Promise<void>
   onRemoveReaction?: (messageId: string, emoji: string) => Promise<void>
-  isDM?: boolean
   showThread?: boolean
 }
 
@@ -55,7 +55,6 @@ export function Message({
   onDelete,
   onAddReaction,
   onRemoveReaction,
-  isDM = false,
   showThread = true,
 }: MessageProps) {
   const [isEditing, setIsEditing] = useState(false)
@@ -64,10 +63,17 @@ export function Message({
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const supabase = createClient()
 
-  // Get the user profile data regardless of the source
-  const userProfile = isDM
-    ? (message as DirectMessage).sender
-    : (message as MessageType).profile
+  // Type guard to check if message is a DirectMessage
+  const isDirectMessage = (
+    msg: MessageType | DirectMessage
+  ): msg is DirectMessage => {
+    return "sender_id" in msg
+  }
+
+  // Get the user profile data based on message type
+  const userProfile = isDirectMessage(message)
+    ? message.sender
+    : message.profile
 
   // Group reactions by emoji and get user IDs who reacted
   const reactionGroups = (message.reactions || []).reduce(
@@ -139,7 +145,7 @@ export function Message({
         {/* Reaction and Action Buttons */}
         <div className="absolute right-2 -top-3 flex items-center gap-0.5 transition-opacity duration-200 bg-background shadow-sm rounded-md border z-10 opacity-0 group-hover:opacity-100">
           {/* Thread Button - Only show for channel messages */}
-          {!isDM && showThread && (
+          {!isDirectMessage(message) && showThread && (
             <Button
               variant="ghost"
               size="sm"
@@ -249,20 +255,16 @@ export function Message({
                         onClick={() => {
                           if (hasUserReacted && onRemoveReaction) {
                             onRemoveReaction(message.id, emoji)
-                          } else if (onAddReaction) {
+                          } else if (!hasUserReacted && onAddReaction) {
                             onAddReaction(message.id, emoji)
                           }
                         }}
-                        className={`rounded-full h-7 px-2 text-sm cursor-pointer transition-colors duration-200 border inline-flex items-center ${
-                          hasUserReacted
-                            ? "bg-indigo-100 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-700 hover:bg-indigo-200 dark:hover:bg-indigo-800/30"
-                            : "bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600"
+                        className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs hover:bg-muted ${
+                          hasUserReacted ? "bg-muted" : ""
                         }`}
                       >
-                        {emoji}{" "}
-                        <span className="ml-1 min-w-[12px] text-center">
-                          {count}
-                        </span>
+                        <span>{emoji}</span>
+                        <span>{count}</span>
                       </button>
                     )
                   }
@@ -271,30 +273,26 @@ export function Message({
             )}
 
             {/* Thread Count - Only show for channel messages */}
-            {!isDM &&
-              showThread &&
-              message.thread_count != null &&
-              message.thread_count > 0 && (
-                <button
-                  onClick={() => setIsThreadOpen(true)}
-                  className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground bg-muted/50 hover:bg-muted px-2 py-1 rounded"
-                >
-                  <MessageSquareText className="h-3.5 w-3.5" />
-                  {message.thread_count}{" "}
-                  {message.thread_count === 1 ? "reply" : "replies"}
-                </button>
-              )}
+            {!isDirectMessage(message) && message.thread_count > 0 && (
+              <button
+                onClick={() => setIsThreadOpen(true)}
+                className="flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs hover:bg-muted"
+              >
+                <MessageSquareText className="h-3 w-3" />
+                <span>{message.thread_count}</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Thread Modal - Only render for channel messages */}
-      {!isDM && showThread && (
+      {/* Thread Modal */}
+      {!isDirectMessage(message) && (
         <ThreadModal
           isOpen={isThreadOpen}
-          onClose={() => setIsThreadOpen(false)}
-          parentMessage={message as any}
+          parentMessage={message}
           onUpdate={onUpdate}
+          onClose={() => setIsThreadOpen(false)}
         />
       )}
     </>
