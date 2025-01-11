@@ -3,7 +3,7 @@ import { ThreadMessage as ThreadMessageType } from "@/types/thread"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog"
 import { Message } from "../message"
 import { ThreadMessage } from "./thread-message"
-import { ThreadReplyInput } from "./thread-reply-input"
+import { ThreadChatInput } from "../chat-input"
 import { useEffect, useState } from "react"
 
 interface ThreadModalProps {
@@ -119,7 +119,9 @@ export function ThreadModal({
           <div className="border-b pb-4">
             <Message
               message={parentMessage}
-              onUpdate={onUpdate}
+              onUpdate={(updatedMessage) =>
+                onUpdate(updatedMessage as MessageType)
+              }
               onDelete={() => {}}
               onAddReaction={async (messageId, emoji) => {
                 try {
@@ -216,7 +218,7 @@ export function ThreadModal({
 
         {/* Reply Input */}
         <div className="border-t p-4">
-          <ThreadReplyInput onSend={handleNewReply} />
+          <ThreadChatInput onSubmit={handleNewReply} />
         </div>
       </DialogContent>
     </Dialog>

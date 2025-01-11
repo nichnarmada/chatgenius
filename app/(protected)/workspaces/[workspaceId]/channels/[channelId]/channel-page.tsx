@@ -1,13 +1,12 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Hash, Send } from "lucide-react"
+import { Hash } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { createClient } from "@/utils/supabase/client"
 import { Message as MessageComponent } from "@/components/message"
-import { Message, Reaction } from "@/types/message"
+import { Message } from "@/types/message"
 import { Channel } from "@/types/workspace"
+import { ChannelChatInput } from "@/components/chat-input"
 
 interface ChannelPageProps {
   channel: Channel
@@ -19,8 +18,6 @@ export function ChannelPage({
   messages: initialMessages,
 }: ChannelPageProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages)
-  const [content, setContent] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
 
@@ -150,41 +147,21 @@ export function ChannelPage({
     }
   }, [messages])
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!content.trim() || isLoading) return
+  async function handleSubmit(content: string) {
+    const response = await fetch("/api/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        content,
+        channelId: channel.id,
+      }),
+    })
 
-    setIsLoading(true)
-    try {
-      const response = await fetch("/api/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          content: content.trim(),
-          channelId: channel.id,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to send message")
-      }
-
-      setContent("")
-    } catch (error) {
-      console.error("Error sending message:", error)
-      alert(error instanceof Error ? error.message : "Failed to send message")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-      handleSubmit(e)
+    const data = await response.json()
+    if (!response.ok) {
+      throw new Error(data.error || "Failed to send message")
     }
   }
 
@@ -273,21 +250,7 @@ export function ChannelPage({
       </div>
 
       {/* Message Input */}
-      <div className="h-[60px] min-h-[60px] border-t p-4">
-        <form onSubmit={handleSubmit} className="flex items-center h-full">
-          <Input
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={`Message #${channel.name}`}
-            className="flex-grow mr-2"
-            disabled={isLoading}
-          />
-          <Button type="submit" disabled={isLoading}>
-            <Send className="h-4 w-4" />
-          </Button>
-        </form>
-      </div>
+      <ChannelChatInput channelName={channel.name} onSubmit={handleSubmit} />
     </div>
   )
 }

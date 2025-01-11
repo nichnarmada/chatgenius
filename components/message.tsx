@@ -16,7 +16,7 @@ import {
 } from "./ui/dropdown-menu"
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
-import { MessageInput } from "./message-input"
+import { MessageInput } from "./chat-input"
 import { ThreadModal } from "./thread/thread-modal"
 import { createClient } from "@/utils/supabase/client"
 import {

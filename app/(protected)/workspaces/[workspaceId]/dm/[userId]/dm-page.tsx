@@ -1,15 +1,13 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Send } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { createClient } from "@/utils/supabase/client"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Message } from "@/components/message"
-import { DirectMessage, Reaction } from "@/types/message"
+import { DirectMessage } from "@/types/message"
 import { Profile } from "@/types/profile"
 import { Workspace } from "@/types/workspace"
+import { DMChatInput } from "@/components/chat-input"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 interface DMPageProps {
   otherUser: Profile
@@ -23,8 +21,6 @@ export function DMPage({
   workspace,
 }: DMPageProps) {
   const [messages, setMessages] = useState<DirectMessage[]>(initialMessages)
-  const [content, setContent] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
 
@@ -172,42 +168,22 @@ export function DMPage({
     }
   }, [messages])
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!content.trim() || isLoading) return
+  async function handleSubmit(content: string) {
+    const response = await fetch("/api/direct-messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        content,
+        workspaceId: workspace.id,
+        receiverId: otherUser.id,
+      }),
+    })
 
-    setIsLoading(true)
-    try {
-      const response = await fetch("/api/direct-messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          content: content.trim(),
-          workspaceId: workspace.id,
-          receiverId: otherUser.id,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to send message")
-      }
-
-      setContent("")
-    } catch (error) {
-      console.error("Error sending message:", error)
-      alert(error instanceof Error ? error.message : "Failed to send message")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-      handleSubmit(e)
+    const data = await response.json()
+    if (!response.ok) {
+      throw new Error(data.error || "Failed to send message")
     }
   }
 
@@ -283,7 +259,9 @@ export function DMPage({
                 onUpdate={(updatedMessage) => {
                   setMessages((prev) =>
                     prev.map((msg) =>
-                      msg.id === updatedMessage.id ? updatedMessage : msg
+                      msg.id === updatedMessage.id
+                        ? (updatedMessage as DirectMessage)
+                        : msg
                     )
                   )
                 }}
@@ -302,21 +280,10 @@ export function DMPage({
       </div>
 
       {/* Message Input */}
-      <div className="h-[60px] min-h-[60px] border-t p-4">
-        <form onSubmit={handleSubmit} className="flex items-center h-full">
-          <Input
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={`Message ${otherUser.display_name || otherUser.email}`}
-            className="flex-grow mr-2"
-            disabled={isLoading}
-          />
-          <Button type="submit" disabled={isLoading}>
-            <Send className="h-4 w-4" />
-          </Button>
-        </form>
-      </div>
+      <DMChatInput
+        recipientName={otherUser.display_name || otherUser.email}
+        onSubmit={handleSubmit}
+      />
     </div>
   )
 }
