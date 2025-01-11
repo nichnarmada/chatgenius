@@ -16,6 +16,7 @@ export function ChannelChatInput({
       onSubmit={onSubmit}
       placeholder={`Message #${channelName}`}
       disabled={disabled}
+      autoFocus={true}
     />
   )
 }

@@ -12,6 +12,7 @@ export function ThreadChatInput({ onSubmit, disabled }: ThreadChatInputProps) {
       placeholder="Reply to thread..."
       disabled={disabled}
       showError={true}
+      autoFocus={true}
     />
   )
 }

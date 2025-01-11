@@ -16,6 +16,7 @@ export function DMChatInput({
       onSubmit={onSubmit}
       placeholder={`Message ${recipientName}`}
       disabled={disabled}
+      autoFocus={true}
     />
   )
 }

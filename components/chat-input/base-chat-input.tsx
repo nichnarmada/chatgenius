@@ -1,9 +1,10 @@
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Send } from "lucide-react"
 import { Button } from "../ui/button"
 import { Input } from "../ui/input"
 import { Alert, AlertDescription } from "../ui/alert"
 import { AlertCircle } from "lucide-react"
+import { Loader2 } from "lucide-react"
 
 export interface BaseChatInputProps {
   onSubmit: (content: string) => Promise<void>
@@ -27,6 +28,7 @@ export function BaseChatInput({
   const [content, setContent] = useState(defaultValue)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -38,6 +40,8 @@ export function BaseChatInput({
     try {
       await onSubmit(content.trim())
       setContent("")
+      // Focus the input after successful submission
+      inputRef.current?.focus()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to send message")
     } finally {
@@ -70,17 +74,26 @@ export function BaseChatInput({
         className={`flex h-full items-center ${className}`}
       >
         <Input
+          ref={inputRef}
           type="text"
           value={content}
           onChange={(e) => setContent(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           className="mr-2 flex-grow"
-          disabled={isLoading || disabled}
+          disabled={disabled}
           autoFocus={autoFocus}
         />
-        <Button type="submit" size="sm" disabled={isLoading || disabled}>
-          <Send className="h-4 w-4" />
+        <Button
+          type="submit"
+          size="sm"
+          disabled={!content.trim() || isLoading || disabled}
+        >
+          {isLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Send className="h-4 w-4" />
+          )}
         </Button>
       </form>
     </div>
