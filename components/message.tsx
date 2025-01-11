@@ -26,19 +26,7 @@ import {
   Reaction,
 } from "@/types/message"
 import { Profile } from "@/types/profile"
-
-const additionalEmojis = [
-  "👍",
-  "❤️",
-  "😂",
-  "🎉",
-  "🤔",
-  "👀",
-  "✨",
-  "🙌",
-  "🔥",
-  "💯",
-]
+import { REACTION_EMOJIS } from "@/constants/emojis"
 
 interface MessageProps {
   message: MessageType | DirectMessage
@@ -168,7 +156,7 @@ export function Message({
             </PopoverTrigger>
             <PopoverContent side="top" align="start" className="w-auto p-1">
               <div className="flex gap-1">
-                {additionalEmojis.map((emoji) => (
+                {REACTION_EMOJIS.map((emoji) => (
                   <Button
                     key={emoji}
                     variant="ghost"
