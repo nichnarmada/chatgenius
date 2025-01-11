@@ -155,9 +155,10 @@ export function Message({
             <PopoverContent side="top" align="start" className="w-auto p-1">
               <div className="flex gap-1">
                 {REACTION_EMOJIS.map((emoji) => {
-                  const hasUserReacted =
+                  const hasUserReacted = Boolean(
                     currentUserId &&
-                    reactionGroups[emoji]?.userIds.has(currentUserId)
+                      reactionGroups[emoji]?.userIds.has(currentUserId)
+                  )
                   return (
                     <Button
                       key={emoji}
@@ -239,8 +240,9 @@ export function Message({
               <>
                 {Object.entries(reactionGroups).map(
                   ([emoji, { count, userIds }]) => {
-                    const hasUserReacted =
+                    const hasUserReacted = Boolean(
                       currentUserId && userIds.has(currentUserId)
+                    )
                     return (
                       <button
                         key={emoji}
