@@ -7,35 +7,14 @@ import { useEffect, useRef, useState } from "react"
 import { createClient } from "@/utils/supabase/client"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Message } from "@/components/message"
-
-interface Reaction {
-  id: string
-  emoji: string
-  user_id: string
-}
-
-interface Message {
-  id: string
-  content: string
-  created_at: string
-  updated_at: string
-  workspace_id: string
-  sender_id: string
-  receiver_id: string
-  sender: {
-    id: string
-    email: string
-    display_name: string | null
-    avatar_url: string | null
-  }
-  thread_count?: number
-  reactions?: Reaction[]
-}
+import { DirectMessage, Reaction } from "@/types/message"
+import { Profile } from "@/types/profile"
+import { Workspace } from "@/types/workspace"
 
 interface DMPageProps {
-  otherUser: any
-  messages: Message[]
-  workspace: any
+  otherUser: Profile
+  messages: DirectMessage[]
+  workspace: Workspace
 }
 
 export function DMPage({
@@ -43,7 +22,7 @@ export function DMPage({
   messages: initialMessages,
   workspace,
 }: DMPageProps) {
-  const [messages, setMessages] = useState<Message[]>(initialMessages)
+  const [messages, setMessages] = useState<DirectMessage[]>(initialMessages)
   const [content, setContent] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -85,7 +64,7 @@ export function DMPage({
             .order("created_at", { ascending: true })
 
           if (data) {
-            setMessages(data as Message[])
+            setMessages(data as DirectMessage[])
           }
         }
       )
@@ -123,7 +102,7 @@ export function DMPage({
               .single()
 
             if (message) {
-              setMessages((prev) => [...prev, message as Message])
+              setMessages((prev) => [...prev, message as DirectMessage])
             }
           }
         }
@@ -162,7 +141,7 @@ export function DMPage({
           if (message) {
             setMessages((prev) =>
               prev.map((msg) =>
-                msg.id === message.id ? (message as Message) : msg
+                msg.id === message.id ? (message as DirectMessage) : msg
               )
             )
           }
@@ -283,7 +262,7 @@ export function DMPage({
       {/* DM Header */}
       <div className="h-[60px] min-h-[60px] border-b flex items-center px-4">
         <Avatar className="h-8 w-8 mr-2">
-          <AvatarImage src={otherUser.avatar_url} />
+          <AvatarImage src={otherUser.avatar_url || undefined} />
           <AvatarFallback>
             {otherUser.display_name?.charAt(0) || otherUser.email?.charAt(0)}
           </AvatarFallback>

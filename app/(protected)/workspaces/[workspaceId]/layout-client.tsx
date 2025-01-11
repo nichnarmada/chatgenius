@@ -44,31 +44,17 @@ import { LeaveWorkspaceModal } from "@/components/modals/leave-workspace-modal"
 import { UserStatus } from "@/components/user-status"
 import type { UserStatusType } from "@/types/user-status"
 import { USER_STATUS_CONFIG, USER_STATUS_ORDER } from "@/constants/user-status"
-
-interface WorkspaceUser {
-  id: string
-  email: string
-  display_name: string
-  avatar_url?: string
-}
-
-interface Workspace {
-  id: string
-  name: string
-  image_url: string | null
-  workspace_members: Array<{
-    user_id: string
-    role: "owner" | "member"
-  }>
-}
+import { Workspace, Channel } from "@/types/workspace"
+import { Profile } from "@/types/profile"
+import { User } from "@supabase/supabase-js"
 
 interface WorkspaceLayoutClientProps {
   children: React.ReactNode
   workspace: Workspace
-  channels: any[]
-  user: any
-  profile: any
-  workspaceUsers: WorkspaceUser[]
+  channels: Channel[]
+  user: User
+  profile: Profile
+  workspaceUsers: Profile[]
 }
 
 interface WorkspacePlaceholderProps {
@@ -453,7 +439,9 @@ export function WorkspaceLayoutClient({
                         <div className="flex items-center gap-2">
                           <div className="relative">
                             <Avatar className="h-5 w-5">
-                              <AvatarImage src={workspaceUser.avatar_url} />
+                              <AvatarImage
+                                src={workspaceUser.avatar_url || undefined}
+                              />
                               <AvatarFallback>
                                 {workspaceUser.display_name?.charAt(0) ||
                                   workspaceUser.email?.charAt(0)}
@@ -496,7 +484,7 @@ export function WorkspaceLayoutClient({
               <Button variant="ghost" className="w-full h-full px-4">
                 <div className="flex items-center gap-2 w-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={profile?.avatar_url} />
+                    <AvatarImage src={profile?.avatar_url || undefined} />
                     <AvatarFallback>
                       {profile?.display_name?.charAt(0) ||
                         profile?.email?.charAt(0)}

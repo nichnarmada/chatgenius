@@ -18,3 +18,16 @@ export interface Message {
   profiles: Profile
   reactions?: Reaction[]
 }
+
+export interface DirectMessage {
+  id: string
+  content: string
+  created_at: string
+  updated_at: string
+  workspace_id: string
+  sender_id: string
+  receiver_id: string
+  sender: Profile
+  thread_count?: number
+  reactions?: Reaction[]
+}

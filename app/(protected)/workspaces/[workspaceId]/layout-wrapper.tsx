@@ -2,16 +2,8 @@ import { createClient } from "@/utils/supabase/server"
 import { redirect } from "next/navigation"
 import { WorkspaceLayoutClient } from "./layout-client"
 import { USER_STATUS_CONFIG } from "@/constants/user-status"
-
-interface WorkspaceUser {
-  user_id: string
-  profiles: {
-    id: string
-    email: string
-    display_name: string
-    avatar_url?: string
-  }
-}
+import { Profile } from "@/types/profile"
+import { Workspace, Channel } from "@/types/workspace"
 
 interface LayoutWrapperProps {
   children: React.ReactNode
@@ -37,13 +29,34 @@ export default async function LayoutWrapper({
   // Fetch user profile for display name
   const { data: profile } = await supabase
     .from("profiles")
-    .select("*")
+    .select(
+      `
+      id,
+      email,
+      display_name,
+      avatar_url
+    `
+    )
     .eq("id", user.id)
     .single()
 
   const { data: workspace } = await supabase
     .from("workspaces")
-    .select("*")
+    .select(
+      `
+      id,
+      name,
+      image_url,
+      workspace_members (
+        user_id,
+        role
+      ),
+      channels (
+        id,
+        name
+      )
+    `
+    )
     .eq("id", workspaceId)
     .single()
 
@@ -53,32 +66,36 @@ export default async function LayoutWrapper({
 
   const { data: channels } = await supabase
     .from("channels")
-    .select("*")
+    .select(
+      `
+      id,
+      name
+    `
+    )
     .eq("workspace_id", workspace.id)
     .order("created_at", { ascending: true })
 
   // Fetch workspace users
-  const { data: workspaceMembers, error: membersError } = await supabase
+  const { data: workspaceMembers } = await supabase
     .from("workspace_members")
     .select("user_id, role")
     .eq("workspace_id", workspace.id)
 
   // Fetch profiles for workspace members
-  const { data: memberProfiles, error: profilesError } = await supabase
+  const { data: memberProfiles } = await supabase
     .from("profiles")
-    .select("id, email, display_name, avatar_url")
+    .select(
+      `
+      id,
+      email,
+      display_name,
+      avatar_url
+    `
+    )
     .in(
       "id",
       (workspaceMembers || []).map((member) => member.user_id)
     )
-
-  // Transform the data to match our interface
-  const transformedUsers = (memberProfiles || []).map((profile) => ({
-    id: profile.id,
-    email: profile.email,
-    display_name: profile.display_name,
-    avatar_url: profile.avatar_url,
-  }))
 
   // Set/update session and status on workspace entry
   await Promise.all([
@@ -95,7 +112,7 @@ export default async function LayoutWrapper({
     supabase.from("user_status").upsert(
       {
         user_id: user.id,
-        status: USER_STATUS_CONFIG.online.type, // Use constant for online status
+        status: USER_STATUS_CONFIG.online.type,
       },
       {
         onConflict: "user_id",
@@ -106,11 +123,11 @@ export default async function LayoutWrapper({
 
   return (
     <WorkspaceLayoutClient
-      workspace={workspace}
-      channels={channels || []}
+      workspace={workspace as Workspace}
+      channels={(channels as Channel[]) || []}
       user={user}
-      profile={profile}
-      workspaceUsers={transformedUsers}
+      profile={profile as Profile}
+      workspaceUsers={(memberProfiles as Profile[]) || []}
     >
       {children}
     </WorkspaceLayoutClient>

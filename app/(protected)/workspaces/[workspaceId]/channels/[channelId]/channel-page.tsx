@@ -5,33 +5,12 @@ import { Input } from "@/components/ui/input"
 import { Hash, Send } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { createClient } from "@/utils/supabase/client"
-import { Message } from "@/components/message"
-
-interface Reaction {
-  id: string
-  emoji: string
-  user_id: string
-}
-
-interface Message {
-  id: string
-  content: string
-  created_at: string
-  updated_at: string
-  channel_id: string
-  user_id: string
-  profile: {
-    id: string
-    email: string
-    display_name: string | null
-    avatar_url: string | null
-  }
-  thread_count?: number
-  reactions?: Reaction[]
-}
+import { Message as MessageComponent } from "@/components/message"
+import { Message, Reaction } from "@/types/message"
+import { Channel } from "@/types/workspace"
 
 interface ChannelPageProps {
-  channel: any
+  channel: Channel
   messages: Message[]
 }
 
@@ -268,7 +247,7 @@ export function ChannelPage({
         <div className="flex flex-col min-h-full">
           <div className="px-4">
             {messages?.map((message) => (
-              <Message
+              <MessageComponent
                 key={message.id}
                 message={message}
                 onUpdate={(updatedMessage) => {

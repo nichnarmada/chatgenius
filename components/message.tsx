@@ -19,6 +19,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 import { MessageInput } from "./message-input"
 import { ThreadModal } from "./thread/thread-modal"
 import { createClient } from "@/utils/supabase/client"
+import {
+  Message as MessageType,
+  DirectMessage,
+  Reaction,
+} from "@/types/message"
+import { Profile } from "@/types/profile"
 
 const additionalEmojis = [
   "👍",
@@ -33,32 +39,9 @@ const additionalEmojis = [
   "💯",
 ]
 
-interface Profile {
-  id: string
-  email: string
-  display_name: string | null
-  avatar_url: string | null
-}
-
-interface Reaction {
-  id: string
-  emoji: string
-  user_id: string
-}
-
 interface MessageProps {
-  message: {
-    id: string
-    content: string
-    created_at: string
-    updated_at?: string
-    thread_count?: number
-    profiles?: Profile // from channel messages
-    profile?: Profile // from channel messages (old structure)
-    sender?: Profile // from DM messages
-    reactions?: Reaction[]
-  }
-  onUpdate: (message: any) => void
+  message: MessageType | DirectMessage
+  onUpdate: (message: MessageType | DirectMessage) => void
   onDelete: (messageId: string) => void
   onAddReaction?: (messageId: string, emoji: string) => Promise<void>
   onRemoveReaction?: (messageId: string, emoji: string) => Promise<void>
@@ -82,7 +65,9 @@ export function Message({
   const supabase = createClient()
 
   // Get the user profile data regardless of the source
-  const userProfile = message.profiles || message.profile || message.sender
+  const userProfile = isDM
+    ? (message as DirectMessage).sender
+    : (message as MessageType).profiles
 
   // Group reactions by emoji and get user IDs who reacted
   const reactionGroups = (message.reactions || []).reduce(
