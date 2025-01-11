@@ -116,8 +116,8 @@ export function WorkspacePictureUpload({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <div className="relative group cursor-pointer">
-          <div className="h-20 w-20 rounded-lg overflow-hidden bg-muted">
+        <div className="group relative cursor-pointer">
+          <div className="h-20 w-20 overflow-hidden rounded-lg bg-muted">
             {currentPictureUrl ? (
               <>
                 <Image
@@ -146,12 +146,12 @@ export function WorkspacePictureUpload({
                 />
               </>
             ) : (
-              <div className="h-full w-full flex items-center justify-center bg-muted">
+              <div className="flex h-full w-full items-center justify-center bg-muted">
                 <Camera className="h-8 w-8 text-muted-foreground" />
               </div>
             )}
           </div>
-          <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/60 opacity-0 transition-opacity group-hover:opacity-100">
             <Camera className="h-6 w-6 text-white" />
           </div>
         </div>
@@ -162,7 +162,7 @@ export function WorkspacePictureUpload({
         </DialogHeader>
         <div className="space-y-4">
           <div className="flex justify-center">
-            <div className="h-40 w-40 rounded-lg overflow-hidden bg-muted">
+            <div className="h-40 w-40 overflow-hidden rounded-lg bg-muted">
               {previewUrl ? (
                 <Image
                   src={previewUrl}
@@ -180,7 +180,7 @@ export function WorkspacePictureUpload({
                   className="object-cover"
                 />
               ) : (
-                <div className="h-full w-full flex items-center justify-center">
+                <div className="flex h-full w-full items-center justify-center">
                   <Camera className="h-12 w-12 text-muted-foreground" />
                 </div>
               )}

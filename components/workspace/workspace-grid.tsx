@@ -21,14 +21,14 @@ export function WorkspaceGrid({ workspaces }: WorkspaceGridProps) {
 
   return (
     <>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
         {workspaces.map((workspace) => (
           <Link
             key={workspace.id}
             href={`/workspaces/${workspace.id}`}
-            className="group aspect-square rounded-xl bg-muted flex flex-col items-center justify-center p-4 transition-all duration-300 hover:shadow-lg"
+            className="group flex aspect-square flex-col items-center justify-center rounded-xl bg-muted p-4 transition-all duration-300 hover:shadow-lg"
           >
-            <div className="relative w-full h-3/4 mb-2">
+            <div className="relative mb-2 h-3/4 w-full">
               <Image
                 src={
                   workspace.image_url ||
@@ -36,10 +36,10 @@ export function WorkspaceGrid({ workspaces }: WorkspaceGridProps) {
                 }
                 alt={workspace.name}
                 fill
-                className="object-cover rounded-lg group-hover:ring-2 group-hover:ring-primary transition-all duration-300"
+                className="rounded-lg object-cover transition-all duration-300 group-hover:ring-2 group-hover:ring-primary"
               />
             </div>
-            <span className="text-lg font-medium text-center">
+            <span className="text-center text-lg font-medium">
               {workspace.name}
             </span>
           </Link>
@@ -47,12 +47,12 @@ export function WorkspaceGrid({ workspaces }: WorkspaceGridProps) {
 
         <button
           onClick={() => setIsModalOpen(true)}
-          className="group aspect-square rounded-xl bg-muted flex flex-col items-center justify-center p-4 transition-all duration-300 hover:shadow-lg"
+          className="group flex aspect-square flex-col items-center justify-center rounded-xl bg-muted p-4 transition-all duration-300 hover:shadow-lg"
         >
-          <div className="relative w-full h-3/4 mb-2 flex items-center justify-center">
-            <Plus className="h-16 w-16 text-muted-foreground group-hover:text-primary transition-all duration-300" />
+          <div className="relative mb-2 flex h-3/4 w-full items-center justify-center">
+            <Plus className="h-16 w-16 text-muted-foreground transition-all duration-300 group-hover:text-primary" />
           </div>
-          <span className="text-lg font-medium text-center">New Workspace</span>
+          <span className="text-center text-lg font-medium">New Workspace</span>
         </button>
       </div>
 

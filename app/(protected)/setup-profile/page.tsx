@@ -129,9 +129,9 @@ export default function SetupProfilePage() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen py-2">
-      <div className="p-8 bg-card rounded-lg shadow-lg max-w-md w-full">
-        <h1 className="text-2xl font-bold text-center mb-6">
+    <div className="flex min-h-screen flex-col items-center justify-center py-2">
+      <div className="w-full max-w-md rounded-lg bg-card p-8 shadow-lg">
+        <h1 className="mb-6 text-center text-2xl font-bold">
           Set Up Your Profile
         </h1>
         <form onSubmit={handleSubmit} className="space-y-6">

@@ -152,13 +152,13 @@ export function CreateWorkspaceModal({
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="image">Workspace image</Label>
-              <div className="flex items-center justify-center w-full">
+              <div className="flex w-full items-center justify-center">
                 <label
                   htmlFor="image"
-                  className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50"
+                  className="flex h-48 w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed hover:bg-muted/50"
                 >
-                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                    <ImageIcon className="w-8 h-8 mb-4 text-muted-foreground" />
+                  <div className="flex flex-col items-center justify-center pb-6 pt-5">
+                    <ImageIcon className="mb-4 h-8 w-8 text-muted-foreground" />
                     <p className="mb-2 text-sm text-muted-foreground">
                       <span className="font-semibold">Click to upload</span> or
                       drag and drop

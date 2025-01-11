@@ -131,7 +131,7 @@ export function Message({
     <>
       <div className="group relative flex gap-3 px-4 py-2 hover:bg-muted/50">
         {/* Reaction and Action Buttons */}
-        <div className="absolute right-2 -top-3 flex items-center gap-0.5 transition-opacity duration-200 bg-background shadow-sm rounded-md border z-10 opacity-0 group-hover:opacity-100">
+        <div className="absolute -top-3 right-2 z-10 flex items-center gap-0.5 rounded-md border bg-background opacity-0 shadow-sm transition-opacity duration-200 group-hover:opacity-100">
           {/* Thread Button - Only show for channel messages */}
           {!isDirectMessage(message) && showThread && (
             <Button
@@ -230,7 +230,7 @@ export function Message({
           )}
 
           {/* Reactions and Thread Count */}
-          <div className="flex flex-wrap items-center gap-1 mt-1">
+          <div className="mt-1 flex flex-wrap items-center gap-1">
             {message.reactions && message.reactions.length > 0 && (
               <>
                 {Object.entries(reactionGroups).map(

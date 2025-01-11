@@ -35,16 +35,16 @@ export function WorkspaceLayout({
   return (
     <div className="flex h-screen">
       {/* Sidebar */}
-      <div className="w-64 bg-background border-r flex flex-col">
+      <div className="flex w-64 flex-col border-r bg-background">
         {/* Workspace name */}
-        <div className="border-b flex items-center justify-between h-[60px] px-4">
-          <h1 className="font-semibold text-lg">{workspace.name}</h1>
+        <div className="flex h-[60px] items-center justify-between border-b px-4">
+          <h1 className="text-lg font-semibold">{workspace.name}</h1>
         </div>
 
         {/* Channels and DMs */}
         <ScrollArea className="flex-grow">
           <div className="p-4">
-            <h2 className="font-semibold mb-2 text-muted-foreground uppercase text-sm">
+            <h2 className="mb-2 text-sm font-semibold uppercase text-muted-foreground">
               Channels
             </h2>
             <ul className="space-y-1">
@@ -69,7 +69,7 @@ export function WorkspaceLayout({
             </ul>
             <Button
               variant="ghost"
-              className="w-full justify-start mt-2"
+              className="mt-2 w-full justify-start"
               onClick={() => setIsCreateChannelOpen(true)}
             >
               <Plus className="mr-2 h-4 w-4" />
@@ -78,14 +78,14 @@ export function WorkspaceLayout({
           </div>
 
           <div className="p-4">
-            <h2 className="font-semibold mb-2 text-muted-foreground uppercase text-sm">
+            <h2 className="mb-2 text-sm font-semibold uppercase text-muted-foreground">
               Direct Messages
             </h2>
             <ul className="space-y-1">
               {["Alice", "Bob", "Charlie"].map((user) => (
                 <li key={user}>
                   <Button variant="ghost" className="w-full justify-start">
-                    <div className="w-2 h-2 rounded-full bg-green-500 mr-2" />
+                    <div className="mr-2 h-2 w-2 rounded-full bg-green-500" />
                     {user}
                   </Button>
                 </li>
@@ -96,7 +96,7 @@ export function WorkspaceLayout({
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col">{children}</main>
+      <main className="flex flex-1 flex-col">{children}</main>
 
       <CreateChannelModal
         isOpen={isCreateChannelOpen}

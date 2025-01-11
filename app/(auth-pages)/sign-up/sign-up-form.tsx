@@ -66,7 +66,7 @@ export function SignUpForm({ messageParams }: SignUpFormProps) {
           Already have an account?{" "}
           <Link
             href="/login"
-            className="text-primary hover:underline font-medium"
+            className="font-medium text-primary hover:underline"
           >
             Sign in
           </Link>

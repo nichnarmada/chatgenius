@@ -76,7 +76,7 @@ export function CreateChannelModal({
           <DialogTitle>Create a new channel</DialogTitle>
         </DialogHeader>
 
-        <form action={onSubmit} className="space-y-6 mt-4">
+        <form action={onSubmit} className="mt-4 space-y-6">
           <div className="space-y-2">
             <Label htmlFor="name">
               Channel name <span className="text-red-500">*</span>

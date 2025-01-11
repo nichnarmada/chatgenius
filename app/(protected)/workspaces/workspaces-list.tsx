@@ -38,14 +38,14 @@ function NewWorkspaceCard() {
     <>
       <div
         onClick={() => setShowCreateModal(true)}
-        className="group aspect-square rounded-xl flex flex-col items-center justify-center p-4 relative border-2 border-transparent hover:border-gray-900 dark:hover:border-gray-100 cursor-pointer"
+        className="group relative flex aspect-square cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-transparent p-4 hover:border-gray-900 dark:hover:border-gray-100"
       >
-        <div className="relative aspect-square w-32 mx-auto mb-2">
-          <div className="relative w-full h-full rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+        <div className="relative mx-auto mb-2 aspect-square w-32">
+          <div className="relative flex h-full w-full items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
             <Plus className="h-12 w-12 text-gray-400 dark:text-gray-500" />
           </div>
         </div>
-        <span className="text-lg font-medium text-center mb-1 text-gray-900 dark:text-gray-100">
+        <span className="mb-1 text-center text-lg font-medium text-gray-900 dark:text-gray-100">
           New Workspace
         </span>
         <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
@@ -211,10 +211,10 @@ export function WorkspacesList({
   )
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="flex min-h-screen flex-col bg-background">
       {/* Header with user profile */}
       <div className="border-b">
-        <div className="max-w-6xl mx-auto px-4 h-[60px] flex items-center justify-between">
+        <div className="mx-auto flex h-[60px] max-w-6xl items-center justify-between px-4">
           <h1 className="text-xl font-semibold">Workspaces</h1>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -251,7 +251,7 @@ export function WorkspacesList({
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                className="text-red-600 cursor-pointer"
+                className="cursor-pointer text-red-600"
                 onSelect={() => setShowSignOutModal(true)}
               >
                 <LogOut className="h-4 w-4" />
@@ -264,10 +264,10 @@ export function WorkspacesList({
 
       {/* Main content */}
       <div className="flex-1 py-12">
-        <div className="w-full max-w-6xl px-4 mx-auto">
+        <div className="mx-auto w-full max-w-6xl px-4">
           <section className="mb-12">
-            <h2 className="text-2xl font-semibold mb-4">Your Workspaces</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <h2 className="mb-4 text-2xl font-semibold">Your Workspaces</h2>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
               {processedUserWorkspaces.map((workspace) => {
                 const defaultChannel = workspace.channels?.[0]
                 const href = defaultChannel
@@ -287,8 +287,8 @@ export function WorkspacesList({
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4">Discover Workspaces</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <h2 className="mb-4 text-2xl font-semibold">Discover Workspaces</h2>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
               {processedDiscoverWorkspaces.map((workspace) => {
                 const defaultChannel = workspace.channels?.[0]
                 const href = defaultChannel

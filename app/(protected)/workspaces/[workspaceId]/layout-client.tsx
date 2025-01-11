@@ -80,7 +80,7 @@ function WorkspacePlaceholder({ name }: WorkspacePlaceholderProps) {
 
   return (
     <div
-      className={`w-full h-full rounded-full ${colorClass} flex items-center justify-center border-2 border-transparent`}
+      className={`h-full w-full rounded-full ${colorClass} flex items-center justify-center border-2 border-transparent`}
     >
       <span className="text-xl font-bold">{initial}</span>
     </div>
@@ -319,20 +319,20 @@ export function WorkspaceLayoutClient({
   return (
     <div className="flex h-screen">
       {/* Sidebar */}
-      <div className="w-64 bg-muted flex flex-col border-r">
+      <div className="flex w-64 flex-col border-r bg-muted">
         {/* Workspace Name */}
         <div className="h-[60px] min-h-[60px] border-b">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
-                className="w-full h-full px-4 justify-start"
+                className="h-full w-full justify-start px-4"
               >
-                <div className="flex items-center justify-between w-full">
+                <div className="flex w-full items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="relative h-8 w-8">
                       {workspace.image_url ? (
-                        <div className="relative w-full h-full rounded-full overflow-hidden">
+                        <div className="relative h-full w-full overflow-hidden rounded-full">
                           <Image
                             src={workspace.image_url}
                             alt={workspace.name}
@@ -344,7 +344,7 @@ export function WorkspaceLayoutClient({
                         <WorkspacePlaceholder name={workspace.name} />
                       )}
                     </div>
-                    <h1 className="font-semibold text-lg">{workspace.name}</h1>
+                    <h1 className="text-lg font-semibold">{workspace.name}</h1>
                   </div>
                   <ChevronDown className="h-4 w-4 text-muted-foreground" />
                 </div>
@@ -354,14 +354,14 @@ export function WorkspaceLayoutClient({
               <DropdownMenuItem
                 onSelect={() => setShowWorkspaceSettingsModal(true)}
               >
-                <div className="flex items-center w-full">
+                <div className="flex w-full items-center">
                   <Settings className="mr-2 h-4 w-4" />
                   Workspace Settings
                 </div>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link href="/workspaces" className="cursor-pointer">
-                  <div className="flex items-center w-full">
+                  <div className="flex w-full items-center">
                     <ArrowLeftRight className="mr-2 h-4 w-4" />
                     Switch Workspace
                   </div>
@@ -371,7 +371,7 @@ export function WorkspaceLayoutClient({
               <DropdownMenuItem
                 onSelect={() => setShowLeaveWorkspaceModal(true)}
               >
-                <div className="flex items-center w-full text-destructive">
+                <div className="flex w-full items-center text-destructive">
                   <DoorOpen className="mr-2 h-4 w-4" />
                   Leave Workspace
                 </div>
@@ -383,7 +383,7 @@ export function WorkspaceLayoutClient({
         {/* Channels Section */}
         <div className="flex-1 overflow-y-auto p-4">
           <div className="mb-8">
-            <h2 className="text-sm font-semibold text-muted-foreground mb-2">
+            <h2 className="mb-2 text-sm font-semibold text-muted-foreground">
               CHANNELS
             </h2>
             <div className="space-y-1">
@@ -419,7 +419,7 @@ export function WorkspaceLayoutClient({
           </div>
 
           <div>
-            <h2 className="text-sm font-semibold text-muted-foreground mb-2">
+            <h2 className="mb-2 text-sm font-semibold text-muted-foreground">
               DIRECT MESSAGES
             </h2>
             <ScrollArea className="h-[200px]">
@@ -481,8 +481,8 @@ export function WorkspaceLayoutClient({
         <div className="h-[60px] min-h-[60px] border-t">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="w-full h-full px-4">
-                <div className="flex items-center gap-2 w-full">
+              <Button variant="ghost" className="h-full w-full px-4">
+                <div className="flex w-full items-center gap-2">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={profile?.avatar_url || undefined} />
                     <AvatarFallback>
@@ -490,13 +490,13 @@ export function WorkspaceLayoutClient({
                         profile?.email?.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex flex-col flex-1 items-start">
+                  <div className="flex flex-1 flex-col items-start">
                     <span className="text-sm font-medium">
                       {profile?.display_name || profile?.email}
                     </span>
                     <div className="flex items-center gap-1">
                       <UserStatus status={userStatuses[user.id]} />
-                      <span className="text-xs text-muted-foreground capitalize">
+                      <span className="text-xs capitalize text-muted-foreground">
                         {userStatuses[user.id] || "offline"}
                       </span>
                     </div>
@@ -537,7 +537,7 @@ export function WorkspaceLayoutClient({
               </DropdownMenuSub>
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={() => setShowProfileModal(true)}>
-                <div className="flex items-center w-full">
+                <div className="flex w-full items-center">
                   <Settings className="mr-2 h-4 w-4" />
                   Profile Settings
                 </div>
@@ -547,7 +547,7 @@ export function WorkspaceLayoutClient({
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={() => setShowSignOutModal(true)}>
-                <div className="flex items-center w-full text-destructive">
+                <div className="flex w-full items-center text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
                   Log out
                 </div>
@@ -558,7 +558,7 @@ export function WorkspaceLayoutClient({
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden">{children}</main>
+      <main className="flex flex-1 flex-col overflow-hidden">{children}</main>
 
       {/* Modals */}
       <SignOutModal

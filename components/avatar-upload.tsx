@@ -67,9 +67,9 @@ export function AvatarUpload({
       onClick={() => fileInputRef.current?.click()}
       onDrop={handleDrop}
       onDragOver={handleDragOver}
-      className="relative group cursor-pointer"
+      className="group relative cursor-pointer"
     >
-      <div className="h-20 w-20 rounded-full overflow-hidden bg-muted">
+      <div className="h-20 w-20 overflow-hidden rounded-full bg-muted">
         {imageUrl ? (
           <Image
             src={imageUrl}
@@ -79,12 +79,12 @@ export function AvatarUpload({
             className="object-cover"
           />
         ) : (
-          <div className="h-full w-full flex items-center justify-center bg-muted">
+          <div className="flex h-full w-full items-center justify-center bg-muted">
             <Camera className="h-8 w-8 text-muted-foreground" />
           </div>
         )}
       </div>
-      <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/60 opacity-0 transition-opacity group-hover:opacity-100">
         <Camera className="h-6 w-6 text-white" />
       </div>
       <input

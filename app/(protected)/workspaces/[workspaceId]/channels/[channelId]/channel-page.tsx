@@ -212,16 +212,16 @@ export function ChannelPage({
   }
 
   return (
-    <div className="flex-1 flex flex-col h-full">
+    <div className="flex h-full flex-1 flex-col">
       {/* Channel Header */}
-      <div className="h-[60px] min-h-[60px] border-b flex items-center px-4">
+      <div className="flex h-[60px] min-h-[60px] items-center border-b px-4">
         <Hash className="mr-2 h-5 w-5" />
-        <h2 className="font-semibold text-lg">{channel.name}</h2>
+        <h2 className="text-lg font-semibold">{channel.name}</h2>
       </div>
 
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto py-4">
-        <div className="flex flex-col min-h-full">
+        <div className="flex min-h-full flex-col">
           <div className="px-4">
             {messages?.map((message) => (
               <MessageComponent

@@ -39,7 +39,7 @@ function WorkspacePlaceholder({ name }: { name: string }) {
 
   return (
     <div
-      className={`w-full h-full rounded-full ${colorClass} flex items-center justify-center border-2 border-transparent`}
+      className={`h-full w-full rounded-full ${colorClass} flex items-center justify-center border-2 border-transparent`}
     >
       <span className="text-4xl font-bold">{initial}</span>
     </div>
@@ -65,10 +65,10 @@ export function WorkspaceCard({
   return (
     <>
       <Link href={href} onClick={handleClick}>
-        <div className="group aspect-square rounded-xl flex flex-col items-center justify-center p-4 relative border-2 border-transparent hover:border-gray-900 dark:hover:border-gray-100 cursor-pointer">
-          <div className="relative aspect-square w-32 mx-auto mb-2">
+        <div className="group relative flex aspect-square cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-transparent p-4 hover:border-gray-900 dark:hover:border-gray-100">
+          <div className="relative mx-auto mb-2 aspect-square w-32">
             {workspace.image_url ? (
-              <div className="relative w-full h-full rounded-full overflow-hidden">
+              <div className="relative h-full w-full overflow-hidden rounded-full">
                 <Image
                   src={workspace.image_url}
                   alt={workspace.name}
@@ -81,7 +81,7 @@ export function WorkspaceCard({
             )}
             {isOwner && (
               <div
-                className="absolute top-0 left-0 bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center dark:bg-blue-600"
+                className="absolute left-0 top-0 flex items-center rounded-full bg-blue-500 px-2 py-1 text-xs font-semibold text-white dark:bg-blue-600"
                 title="You are the owner"
               >
                 <Star size={12} className="mr-1" />
@@ -89,7 +89,7 @@ export function WorkspaceCard({
               </div>
             )}
           </div>
-          <span className="text-lg font-medium text-center mb-1 text-gray-900 dark:text-gray-100">
+          <span className="mb-1 text-center text-lg font-medium text-gray-900 dark:text-gray-100">
             {workspace.name}
           </span>
           <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">

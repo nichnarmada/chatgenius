@@ -67,14 +67,14 @@ export function BaseChatInput({
       )}
       <form
         onSubmit={handleSubmit}
-        className={`flex items-center h-full ${className}`}
+        className={`flex h-full items-center ${className}`}
       >
         <Textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="flex-grow mr-2 min-h-[44px] resize-none"
+          className="mr-2 min-h-[44px] flex-grow resize-none"
           disabled={isLoading || disabled}
           autoFocus={autoFocus}
         />

@@ -110,11 +110,11 @@ export function ThreadModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+      <DialogContent className="flex max-h-[80vh] max-w-2xl flex-col">
         <DialogHeader>
           <DialogTitle>Thread</DialogTitle>
         </DialogHeader>
-        <div className="flex-1 overflow-y-auto space-y-4 p-4">
+        <div className="flex-1 space-y-4 overflow-y-auto p-4">
           {/* Parent Message */}
           <div className="border-b pb-4">
             <Message

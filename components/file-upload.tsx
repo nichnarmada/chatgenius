@@ -66,7 +66,7 @@ export function FileUpload({
       <input
         type="file"
         onChange={handleFileChange}
-        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
         disabled={isUploading}
       />
       <Button
@@ -101,12 +101,12 @@ export function FilePreview({ file }: FilePreviewProps) {
   }
 
   return (
-    <div className="flex items-center gap-2 p-2 rounded-md border">
+    <div className="flex items-center gap-2 rounded-md border p-2">
       {isImage ? (
         <img
           src={file.file_url}
           alt={file.file_name}
-          className="h-10 w-10 object-cover rounded"
+          className="h-10 w-10 rounded object-cover"
         />
       ) : (
         <FileIcon className="h-10 w-10" />

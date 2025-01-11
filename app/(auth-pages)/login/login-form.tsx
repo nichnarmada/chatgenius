@@ -42,7 +42,7 @@ export function LoginForm({ messageParams }: LoginFormProps) {
         </div>
 
         <div className="space-y-2">
-          <div className="flex justify-between items-center">
+          <div className="flex items-center justify-between">
             <Label htmlFor="password">Password</Label>
             <Link
               className="text-sm text-muted-foreground hover:text-primary"
@@ -74,7 +74,7 @@ export function LoginForm({ messageParams }: LoginFormProps) {
           Don't have an account?{" "}
           <Link
             href="/sign-up"
-            className="text-primary hover:underline font-medium"
+            className="font-medium text-primary hover:underline"
           >
             Sign up
           </Link>

@@ -20,14 +20,14 @@ export default async function SignUp({ searchParams }: SearchParamsProps) {
         : { message: "" }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center relative px-4">
-      <div className="absolute top-4 right-4">
+    <div className="relative flex min-h-screen flex-col items-center justify-center px-4">
+      <div className="absolute right-4 top-4">
         <ThemeSwitcher />
       </div>
 
       <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold mb-2">ChatGenius</h1>
+        <div className="mb-8 text-center">
+          <h1 className="mb-2 text-2xl font-bold">ChatGenius</h1>
           <p className="text-muted-foreground">Create your account</p>
         </div>
 

@@ -71,7 +71,7 @@ export function InviteModal({
           <DialogTitle>Invite to workspace</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6 mt-4">
+        <form onSubmit={handleSubmit} className="mt-4 space-y-6">
           <div className="space-y-2">
             <Label htmlFor="email">
               Email address <span className="text-red-500">*</span>

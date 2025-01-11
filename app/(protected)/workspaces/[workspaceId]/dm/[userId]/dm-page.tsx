@@ -234,16 +234,16 @@ export function DMPage({
   }
 
   return (
-    <div className="flex-1 flex flex-col h-full">
+    <div className="flex h-full flex-1 flex-col">
       {/* DM Header */}
-      <div className="h-[60px] min-h-[60px] border-b flex items-center px-4">
-        <Avatar className="h-8 w-8 mr-2">
+      <div className="flex h-[60px] min-h-[60px] items-center border-b px-4">
+        <Avatar className="mr-2 h-8 w-8">
           <AvatarImage src={otherUser.avatar_url || undefined} />
           <AvatarFallback>
             {otherUser.display_name?.charAt(0) || otherUser.email?.charAt(0)}
           </AvatarFallback>
         </Avatar>
-        <h2 className="font-semibold text-lg">
+        <h2 className="text-lg font-semibold">
           {otherUser.display_name || otherUser.email}
         </h2>
       </div>
@@ -277,7 +277,7 @@ export function DMPage({
       </div>
 
       {/* Message Input */}
-      <div className="p-4 border-t">
+      <div className="border-t p-4">
         <DMChatInput
           onSubmit={handleSubmit}
           recipientName={otherUser.display_name || otherUser.email}
