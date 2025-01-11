@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { createClient } from "@/utils/supabase/client"
-import { redirect, useRouter, usePathname } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import {
   Hash,
@@ -10,12 +10,9 @@ import {
   LogOut,
   ChevronDown,
   ChevronUp,
-  UserPlus,
-  MessageSquare,
   Settings,
   ArrowLeftRight,
   DoorOpen,
-  Circle,
 } from "lucide-react"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"

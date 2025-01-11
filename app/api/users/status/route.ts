@@ -1,6 +1,6 @@
 import { createClient } from "@/utils/supabase/server"
 import { NextResponse, type NextRequest } from "next/server"
-import { USER_STATUS_CONFIG, USER_STATUS_ORDER } from "@/constants/user-status"
+import { USER_STATUS_ORDER } from "@/constants/user-status"
 import type { UserStatusType } from "@/types/user-status"
 
 export async function GET(request: NextRequest) {

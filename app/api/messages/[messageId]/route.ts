@@ -5,7 +5,7 @@ export async function GET(request: NextRequest) {
   try {
     const messageId = request.nextUrl.pathname.split("/")[3]
 
-    let response = NextResponse.next({
+    const response = NextResponse.next({
       request,
     })
 

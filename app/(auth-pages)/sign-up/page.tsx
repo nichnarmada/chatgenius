@@ -1,5 +1,4 @@
-import { signUpAction } from "@/app/actions"
-import { FormMessage, Message } from "@/components/form-message"
+import { Message } from "@/components/form-message"
 import { SignUpForm } from "./sign-up-form"
 import { ThemeSwitcher } from "@/components/theme-switcher"
 

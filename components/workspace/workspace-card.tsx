@@ -1,8 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Users, UserPlus, Star } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Users, Star } from "lucide-react"
 import { useState } from "react"
 import { JoinWorkspaceModal } from "@/components/modals/join-workspace-modal"
 import Image from "next/image"

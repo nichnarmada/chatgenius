@@ -15,7 +15,7 @@ export async function PATCH(request: NextRequest) {
       )
     }
 
-    let response = NextResponse.next({
+    const response = NextResponse.next({
       request,
     })
 
@@ -101,7 +101,7 @@ export async function DELETE(request: NextRequest) {
   try {
     const threadId = request.nextUrl.pathname.split("/")[5]
 
-    let response = NextResponse.next({
+    const response = NextResponse.next({
       request,
     })
 

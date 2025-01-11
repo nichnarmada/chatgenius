@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
     const threadId = request.nextUrl.pathname.split("/")[5]
     const { emoji } = await request.json()
 
-    let response = NextResponse.next({
+    const response = NextResponse.next({
       request,
     })
 
@@ -128,7 +128,7 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    let response = NextResponse.next({
+    const response = NextResponse.next({
       request,
     })
 

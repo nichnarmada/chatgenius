@@ -1,4 +1,4 @@
-import { Message as MessageType, BaseMessage } from "@/types/message"
+import { Message as MessageType } from "@/types/message"
 import { ThreadMessage as ThreadMessageType } from "@/types/thread"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog"
 import { Message } from "../message"

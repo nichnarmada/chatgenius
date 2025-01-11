@@ -19,13 +19,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 import { MessageInput } from "./chat-input"
 import { ThreadModal } from "./thread/thread-modal"
 import { createClient } from "@/utils/supabase/client"
-import {
-  BaseMessage,
-  Message as MessageType,
-  DirectMessage,
-  Reaction,
-} from "@/types/message"
-import { Profile } from "@/types/profile"
+import { Message as MessageType, DirectMessage } from "@/types/message"
 import { REACTION_EMOJIS } from "@/constants/emojis"
 
 interface MessageProps {
