@@ -52,10 +52,11 @@ export async function getChannelData(workspaceId: string, channelId: string) {
         display_name,
         avatar_url
       ),
-      reactions (
+      reactions!message_id (
         id,
         emoji,
-        user_id
+        user_id,
+        created_at
       )
     `
     )

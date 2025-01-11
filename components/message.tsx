@@ -41,7 +41,7 @@ export function Message({
 }: MessageProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [isThreadOpen, setIsThreadOpen] = useState(false)
-  const [isReactionOpen, setIsReactionOpen] = useState(false)
+  const [isReactionOpen, setIsReactionOpen] = useState<boolean>(false)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const supabase = createClient()
 
@@ -64,13 +64,17 @@ export function Message({
         acc[reaction.emoji] = {
           count: 0,
           userIds: new Set(),
+          reactionId: reaction.id,
         }
       }
       acc[reaction.emoji].count++
       acc[reaction.emoji].userIds.add(reaction.user_id)
       return acc
     },
-    {} as Record<string, { count: number; userIds: Set<string> }>
+    {} as Record<
+      string,
+      { count: number; userIds: Set<string>; reactionId: string }
+    >
   )
 
   useEffect(() => {
@@ -83,7 +87,7 @@ export function Message({
       }
     }
     getCurrentUser()
-  }, [])
+  }, [supabase.auth])
 
   const handleUpdate = async (content: string) => {
     try {
@@ -140,8 +144,8 @@ export function Message({
 
           {/* Reaction Button */}
           <Popover
-            open={isReactionOpen}
-            onOpenChange={(open) => setIsReactionOpen(open)}
+            open={isReactionOpen || undefined}
+            onOpenChange={(open: boolean) => setIsReactionOpen(open)}
           >
             <PopoverTrigger asChild>
               <Button variant="ghost" size="sm" className="h-7 px-2">
@@ -150,21 +154,27 @@ export function Message({
             </PopoverTrigger>
             <PopoverContent side="top" align="start" className="w-auto p-1">
               <div className="flex gap-1">
-                {REACTION_EMOJIS.map((emoji) => (
-                  <Button
-                    key={emoji}
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      if (onAddReaction) {
-                        onAddReaction(message.id, emoji)
-                        setIsReactionOpen(false)
-                      }
-                    }}
-                  >
-                    {emoji}
-                  </Button>
-                ))}
+                {REACTION_EMOJIS.map((emoji) => {
+                  const hasUserReacted =
+                    currentUserId &&
+                    reactionGroups[emoji]?.userIds.has(currentUserId)
+                  return (
+                    <Button
+                      key={emoji}
+                      variant="ghost"
+                      size="sm"
+                      disabled={hasUserReacted}
+                      onClick={() => {
+                        if (!hasUserReacted && onAddReaction) {
+                          onAddReaction(message.id, emoji)
+                          setIsReactionOpen(false)
+                        }
+                      }}
+                    >
+                      {emoji}
+                    </Button>
+                  )
+                })}
               </div>
             </PopoverContent>
           </Popover>
@@ -234,19 +244,33 @@ export function Message({
                     return (
                       <button
                         key={emoji}
-                        onClick={() => {
-                          if (hasUserReacted && onRemoveReaction) {
-                            onRemoveReaction(message.id, emoji)
-                          } else if (!hasUserReacted && onAddReaction) {
-                            onAddReaction(message.id, emoji)
+                        onClick={async () => {
+                          try {
+                            if (hasUserReacted && onRemoveReaction) {
+                              await onRemoveReaction(message.id, emoji)
+                            } else if (!hasUserReacted && onAddReaction) {
+                              await onAddReaction(message.id, emoji)
+                            }
+                          } catch (error) {
+                            console.error("Error handling reaction:", error)
                           }
                         }}
                         className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs hover:bg-muted ${
-                          hasUserReacted ? "bg-muted" : ""
+                          hasUserReacted
+                            ? "border-blue-500 bg-blue-50 dark:border-blue-800 dark:bg-blue-950"
+                            : "hover:border-gray-300 dark:hover:border-gray-600"
                         }`}
                       >
                         <span>{emoji}</span>
-                        <span>{count}</span>
+                        <span
+                          className={
+                            hasUserReacted
+                              ? "text-blue-600 dark:text-blue-400"
+                              : ""
+                          }
+                        >
+                          {count}
+                        </span>
                       </button>
                     )
                   }

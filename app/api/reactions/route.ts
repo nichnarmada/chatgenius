@@ -1,8 +1,7 @@
 import { createServerClient } from "@supabase/ssr"
-import { cookies } from "next/headers"
-import { NextResponse } from "next/server"
+import { NextResponse, type NextRequest } from "next/server"
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const { message_id, dm_message_id, thread_message_id, emoji } =
       await request.json()
@@ -15,25 +14,38 @@ export async function POST(request: Request) {
       )
     }
 
-    const cookieStore = await cookies()
+    let response = NextResponse.next({
+      request,
+    })
+
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value
+          getAll() {
+            return request.cookies.getAll()
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              request.cookies.set(name, value)
+            )
+            response = NextResponse.next({
+              request,
+            })
+            cookiesToSet.forEach(({ name, value, options }) =>
+              response.cookies.set(name, value, options)
+            )
           },
         },
       }
     )
 
-    // Get the current user's session
     const {
-      data: { session },
-    } = await supabase.auth.getSession()
+      data: { user },
+    } = await supabase.auth.getUser()
 
-    if (!session) {
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -43,7 +55,7 @@ export async function POST(request: Request) {
       dm_message_id,
       thread_message_id,
       emoji,
-      user_id: session.user.id,
+      user_id: user.id,
     })
 
     if (error) {
@@ -64,7 +76,7 @@ export async function POST(request: Request) {
   }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
   try {
     const { message_id, dm_message_id, thread_message_id, emoji } =
       await request.json()
@@ -77,32 +89,45 @@ export async function DELETE(request: Request) {
       )
     }
 
-    const cookieStore = await cookies()
+    let response = NextResponse.next({
+      request,
+    })
+
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value
+          getAll() {
+            return request.cookies.getAll()
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              request.cookies.set(name, value)
+            )
+            response = NextResponse.next({
+              request,
+            })
+            cookiesToSet.forEach(({ name, value, options }) =>
+              response.cookies.set(name, value, options)
+            )
           },
         },
       }
     )
 
-    // Get the current user's session
     const {
-      data: { session },
-    } = await supabase.auth.getSession()
+      data: { user },
+    } = await supabase.auth.getUser()
 
-    if (!session) {
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Delete the reaction
-    const { error } = await supabase
+    // First find the reaction to delete
+    const { data: existingReaction, error: findError } = await supabase
       .from("reactions")
-      .delete()
+      .select("id")
       .match({
         ...(message_id
           ? { message_id }
@@ -110,18 +135,33 @@ export async function DELETE(request: Request) {
             ? { dm_message_id }
             : { thread_message_id }),
         emoji,
-        user_id: session.user.id,
+        user_id: user.id,
       })
+      .single()
 
-    if (error) {
-      console.error("Error removing reaction:", error)
+    if (findError || !existingReaction) {
+      console.error("Error finding reaction:", findError)
+      return NextResponse.json({ error: "Reaction not found" }, { status: 404 })
+    }
+
+    console.log("Found reaction to delete:", existingReaction.id)
+
+    // Delete the reaction
+    const { error: deleteError } = await supabase
+      .from("reactions")
+      .delete()
+      .eq("id", existingReaction.id)
+
+    if (deleteError) {
+      console.error("Error removing reaction:", deleteError)
       return NextResponse.json(
         { error: "Failed to remove reaction" },
         { status: 500 }
       )
     }
 
-    return NextResponse.json({ success: true })
+    console.log("Successfully deleted reaction:", existingReaction.id)
+    return NextResponse.json({ success: true, id: existingReaction.id })
   } catch (error) {
     console.error("Error in DELETE /api/reactions:", error)
     return NextResponse.json(

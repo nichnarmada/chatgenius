@@ -22,6 +22,8 @@ export function ChannelPage({
   const supabase = createClient()
 
   useEffect(() => {
+    console.log("Setting up real-time subscriptions for channel:", channel.id)
+
     const messageChannel = supabase
       .channel(`channel_messages:${channel.id}`)
       .on(
@@ -33,6 +35,8 @@ export function ChannelPage({
           filter: `channel_id=eq.${channel.id}`,
         },
         async (payload) => {
+          console.log("Message change received:", payload.eventType, payload)
+
           if (payload.eventType === "INSERT") {
             if (!messages.some((msg) => msg.id === payload.new.id)) {
               const { data: message } = await supabase
@@ -57,6 +61,7 @@ export function ChannelPage({
                 .single()
 
               if (message) {
+                console.log("New message added:", message)
                 setMessages((prev) => [...prev, message as Message])
                 if (scrollRef.current) {
                   scrollRef.current.scrollTop = scrollRef.current.scrollHeight
@@ -86,6 +91,7 @@ export function ChannelPage({
               .single()
 
             if (message) {
+              console.log("Message updated:", message)
               setMessages((prev) =>
                 prev.map((msg) =>
                   msg.id === message.id ? (message as Message) : msg
@@ -93,6 +99,7 @@ export function ChannelPage({
               )
             }
           } else if (payload.eventType === "DELETE") {
+            console.log("Message deleted:", payload.old.id)
             setMessages((prev) =>
               prev.filter((msg) => msg.id !== payload.old.id)
             )
@@ -105,41 +112,86 @@ export function ChannelPage({
           event: "*",
           schema: "public",
           table: "reactions",
-          filter: `message_id=in.(${messages.map((m) => m.id).join(",")})`,
         },
-        async () => {
-          const { data } = await supabase
-            .from("messages")
-            .select(
-              `
-              *,
-              profile:user_id (
-                id,
-                email,
-                display_name,
-                avatar_url
-              ),
-              reactions (
-                id,
-                emoji,
-                user_id
-              )
-            `
-            )
-            .eq("channel_id", channel.id)
-            .order("created_at", { ascending: true })
+        async (payload) => {
+          console.log("Reaction change received:", payload.eventType, payload)
 
-          if (data) {
-            setMessages(data as Message[])
+          if (payload.eventType === "DELETE") {
+            const oldReaction = payload.old as {
+              message_id: string
+              id: string
+            }
+            console.log("Reaction deleted:", oldReaction)
+
+            // Immediately update the local state
+            setMessages((prev) =>
+              prev.map((msg) => {
+                if (msg.id === oldReaction.message_id) {
+                  return {
+                    ...msg,
+                    reactions: msg.reactions?.filter(
+                      (r) => r.id !== oldReaction.id
+                    ),
+                  }
+                }
+                return msg
+              })
+            )
+          } else {
+            // Handle INSERT and UPDATE
+            const messageId = (payload.new as { message_id?: string })
+              ?.message_id
+            if (messageId) {
+              console.log(
+                "Fetching updated message for reaction change:",
+                messageId
+              )
+              const { data: message } = await supabase
+                .from("messages")
+                .select(
+                  `
+                  *,
+                  profile:user_id (
+                    id,
+                    email,
+                    display_name,
+                    avatar_url
+                  ),
+                  reactions (
+                    id,
+                    emoji,
+                    user_id,
+                    created_at
+                  )
+                `
+                )
+                .eq("id", messageId)
+                .single()
+
+              if (message) {
+                console.log(
+                  "Updating message with new reactions state:",
+                  message
+                )
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === messageId ? (message as Message) : msg
+                  )
+                )
+              }
+            }
           }
         }
       )
-      .subscribe()
+      .subscribe((status) => {
+        console.log("Subscription status:", status)
+      })
 
     return () => {
+      console.log("Cleaning up subscriptions")
       supabase.removeChannel(messageChannel)
     }
-  }, [channel.id, messages, supabase])
+  }, [channel.id, supabase])
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -205,6 +257,22 @@ export function ChannelPage({
         const data = await response.json()
         throw new Error(data.error || "Failed to remove reaction")
       }
+
+      // Immediately update local state
+      const { id: deletedReactionId } = await response.json()
+      setMessages((prev) =>
+        prev.map((msg) => {
+          if (msg.id === messageId) {
+            return {
+              ...msg,
+              reactions: msg.reactions?.filter(
+                (r) => r.id !== deletedReactionId
+              ),
+            }
+          }
+          return msg
+        })
+      )
     } catch (error) {
       console.error("Error removing reaction:", error)
       alert("Failed to remove reaction")
