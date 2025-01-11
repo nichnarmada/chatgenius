@@ -61,6 +61,13 @@ export default function SetupProfilePage() {
         avatarUrl = data.url
       }
 
+      // Update user metadata in auth table
+      const { error: updateUserError } = await supabase.auth.updateUser({
+        data: { display_name: displayName },
+      })
+
+      if (updateUserError) throw updateUserError
+
       // Check if profile exists
       const { data: profile, error: fetchError } = await supabase
         .from("profiles")

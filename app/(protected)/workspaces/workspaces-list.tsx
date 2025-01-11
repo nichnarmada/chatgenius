@@ -1,7 +1,6 @@
 "use client"
 
-import Link from "next/link"
-import { Plus, LogOut, ChevronUp, Settings } from "lucide-react"
+import { Plus, LogOut, Settings } from "lucide-react"
 import { WorkspaceCard } from "@/components/workspace/workspace-card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -20,22 +19,11 @@ import { createClient } from "@/utils/supabase/client"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/components/ui/use-toast"
 import { CreateWorkspaceModal } from "@/components/modals/create-workspace-modal"
-
-interface WorkspaceMember {
-  user_id: string
-  role: "owner" | "member"
-}
-
-interface Workspace {
-  id: string
-  name: string
-  image_url: string | null
-  workspace_members: WorkspaceMember[]
-  channels: Array<{ id: string; name: string }>
-}
+import { Workspace, WorkspaceMember } from "@/types/workspace"
 
 interface WorkspacesListProps {
   initialWorkspaces: Workspace[]
+  discoverableWorkspaces: Workspace[]
   userId: string
   user: any
   profile: any
@@ -75,17 +63,97 @@ function NewWorkspaceCard() {
 
 export function WorkspacesList({
   initialWorkspaces,
+  discoverableWorkspaces,
   userId,
   user,
   profile,
   error,
   success,
 }: WorkspacesListProps) {
+  const [userWorkspaces, setUserWorkspaces] = useState(initialWorkspaces)
+  const [discoverWorkspaces, setDiscoverWorkspaces] = useState(
+    discoverableWorkspaces
+  )
   const [showSignOutModal, setShowSignOutModal] = useState(false)
   const [showProfileModal, setShowProfileModal] = useState(false)
   const router = useRouter()
   const supabase = createClient()
   const { toast } = useToast()
+
+  // Add real-time subscription for workspaces and members
+  useEffect(() => {
+    const workspaceChannel = supabase
+      .channel("workspace_updates")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "workspace_members",
+        },
+        async (payload) => {
+          console.log("Workspace members change received:", payload)
+
+          // Fetch the updated workspace data for user's workspaces
+          const { data: updatedUserWorkspaces } = await supabase
+            .from("workspaces")
+            .select(
+              `
+              id,
+              name,
+              image_url,
+              workspace_members!inner (
+                user_id,
+                role
+              ),
+              channels (
+                id,
+                name
+              )
+            `
+            )
+            .eq("workspace_members.user_id", userId)
+            .order("created_at", { ascending: false })
+
+          // Fetch discoverable workspaces
+          const { data: updatedDiscoverWorkspaces } = await supabase
+            .from("workspaces")
+            .select(
+              `
+              id,
+              name,
+              image_url,
+              workspace_members (
+                user_id,
+                role
+              ),
+              channels (
+                id,
+                name
+              )
+            `
+            )
+            .not("workspace_members.user_id", "eq", userId)
+            .order("created_at", { ascending: false })
+
+          if (updatedUserWorkspaces) {
+            setUserWorkspaces(updatedUserWorkspaces)
+          }
+          if (updatedDiscoverWorkspaces) {
+            setDiscoverWorkspaces(updatedDiscoverWorkspaces)
+          }
+        }
+      )
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          console.log("Subscribed to workspace updates")
+        }
+      })
+
+    return () => {
+      supabase.removeChannel(workspaceChannel)
+    }
+  }, [supabase, userId])
 
   // Show error toast if there's an error
   useEffect(() => {
@@ -121,22 +189,26 @@ export function WorkspacesList({
     }
   }
 
-  // Process workspaces to determine user membership
-  const processedWorkspaces = initialWorkspaces.map((workspace: Workspace) => ({
-    ...workspace,
-    isMember: workspace.workspace_members.some(
-      (member: WorkspaceMember) => member.user_id === userId
-    ),
-    memberCount: workspace.workspace_members.length,
-    userRole: workspace.workspace_members.find(
-      (member: WorkspaceMember) => member.user_id === userId
-    )?.role,
-  }))
+  // Process workspaces to add member count and user role
+  const processedUserWorkspaces = userWorkspaces.map(
+    (workspace: Workspace) => ({
+      ...workspace,
+      isMember: true,
+      memberCount: workspace.workspace_members.length,
+      userRole: workspace.workspace_members.find(
+        (member: WorkspaceMember) => member.user_id === userId
+      )?.role,
+    })
+  )
 
-  // Split workspaces into user's workspaces and discoverable workspaces
-  const userWorkspaces = processedWorkspaces.filter((w) => w.isMember) || []
-  const discoverWorkspaces =
-    processedWorkspaces.filter((w) => !w.isMember) || []
+  const processedDiscoverWorkspaces = discoverWorkspaces.map(
+    (workspace: Workspace) => ({
+      ...workspace,
+      isMember: false,
+      memberCount: workspace.workspace_members.length,
+      userRole: undefined,
+    })
+  )
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -196,7 +268,7 @@ export function WorkspacesList({
           <section className="mb-12">
             <h2 className="text-2xl font-semibold mb-4">Your Workspaces</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {userWorkspaces.map((workspace) => {
+              {processedUserWorkspaces.map((workspace) => {
                 const defaultChannel = workspace.channels?.[0]
                 const href = defaultChannel
                   ? `/workspaces/${workspace.id}/channels/${defaultChannel.id}`
@@ -217,7 +289,7 @@ export function WorkspacesList({
           <section>
             <h2 className="text-2xl font-semibold mb-4">Discover Workspaces</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {discoverWorkspaces.map((workspace) => {
+              {processedDiscoverWorkspaces.map((workspace) => {
                 const defaultChannel = workspace.channels?.[0]
                 const href = defaultChannel
                   ? `/workspaces/${workspace.id}/channels/${defaultChannel.id}`

@@ -107,9 +107,10 @@ export function WorkspaceLayoutClient({
   channels,
   user,
   profile,
-  workspaceUsers,
+  workspaceUsers: initialWorkspaceUsers,
 }: WorkspaceLayoutClientProps) {
   const [workspace, setWorkspace] = useState(initialWorkspace)
+  const [workspaceUsers, setWorkspaceUsers] = useState(initialWorkspaceUsers)
   const [userStatuses, setUserStatuses] = useState<
     Record<string, UserStatusType>
   >({})
@@ -184,7 +185,6 @@ export function WorkspaceLayoutClient({
           filter: `id=eq.${workspace.id}`,
         },
         async (payload) => {
-          // Update workspace state with new data
           setWorkspace((prev) => ({
             ...prev,
             ...payload.new,
@@ -197,6 +197,45 @@ export function WorkspaceLayoutClient({
       supabase.removeChannel(workspaceChannel)
     }
   }, [workspace.id, supabase])
+
+  useEffect(() => {
+    const workspaceChannel = supabase
+      .channel(`workspace_${workspace.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "workspace_members",
+          filter: `workspace_id=eq.${workspace.id}`,
+        },
+        async () => {
+          const { data: updatedUsers } = await supabase
+            .from("profiles")
+            .select(
+              `
+              id,
+              email,
+              display_name,
+              avatar_url
+            `
+            )
+            .in(
+              "id",
+              workspace.workspace_members.map((member) => member.user_id)
+            )
+
+          if (updatedUsers) {
+            setWorkspaceUsers(updatedUsers)
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(workspaceChannel)
+    }
+  }, [workspace.id, workspace.workspace_members, supabase])
 
   // Check if user is owner
   const isOwner = workspace.workspace_members?.some(

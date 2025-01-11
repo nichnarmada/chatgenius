@@ -57,12 +57,8 @@ export function ChannelPage({
           filter: `channel_id=eq.${channel.id}`,
         },
         async (payload) => {
-          console.log("Message change received:", payload)
-
           if (payload.eventType === "INSERT") {
-            // Only add the message if it's not already in the state
             if (!messages.some((msg) => msg.id === payload.new.id)) {
-              // Fetch the complete message with user data
               const { data: message } = await supabase
                 .from("messages")
                 .select(
@@ -86,14 +82,12 @@ export function ChannelPage({
 
               if (message) {
                 setMessages((prev) => [...prev, message as Message])
-                // Scroll to bottom when new message arrives
                 if (scrollRef.current) {
                   scrollRef.current.scrollTop = scrollRef.current.scrollHeight
                 }
               }
             }
           } else if (payload.eventType === "UPDATE") {
-            // Fetch the updated message with user data
             const { data: message } = await supabase
               .from("messages")
               .select(
@@ -138,7 +132,6 @@ export function ChannelPage({
           filter: `message_id=in.(${messages.map((m) => m.id).join(",")})`,
         },
         async () => {
-          // Refetch messages to get updated reactions
           const { data } = await supabase
             .from("messages")
             .select(
@@ -165,11 +158,7 @@ export function ChannelPage({
           }
         }
       )
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          console.log("Subscribed to channel messages:", channel.id)
-        }
-      })
+      .subscribe()
 
     return () => {
       supabase.removeChannel(messageChannel)
