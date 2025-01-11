@@ -15,7 +15,7 @@ export interface Message {
   updated_at: string
   content_search: any // tsvector type
   thread_count: number
-  profiles: Profile
+  profile: Profile
   reactions?: Reaction[]
 }
 

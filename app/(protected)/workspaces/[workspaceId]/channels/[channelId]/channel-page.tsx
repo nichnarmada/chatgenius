@@ -253,7 +253,9 @@ export function ChannelPage({
                 onUpdate={(updatedMessage) => {
                   setMessages((prev) =>
                     prev.map((msg) =>
-                      msg.id === updatedMessage.id ? updatedMessage : msg
+                      msg.id === updatedMessage.id
+                        ? (updatedMessage as Message)
+                        : msg
                     )
                   )
                 }}

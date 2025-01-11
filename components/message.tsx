@@ -67,7 +67,7 @@ export function Message({
   // Get the user profile data regardless of the source
   const userProfile = isDM
     ? (message as DirectMessage).sender
-    : (message as MessageType).profiles
+    : (message as MessageType).profile
 
   // Group reactions by emoji and get user IDs who reacted
   const reactionGroups = (message.reactions || []).reduce(

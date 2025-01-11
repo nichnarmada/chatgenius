@@ -12,19 +12,36 @@ export async function getChannelData(workspaceId: string, channelId: string) {
     redirect("/login")
   }
 
+  // Check workspace membership
+  const { data: workspaceMember, error: workspaceMemberError } = await supabase
+    .from("workspace_members")
+    .select("*")
+    .eq("workspace_id", workspaceId)
+    .eq("user_id", user.id)
+    .single()
+
+  if (workspaceMemberError || !workspaceMember) {
+    redirect("/")
+  }
+
   // Fetch channel details
-  const { data: channel } = await supabase
+  const { data: channel, error: channelError } = await supabase
     .from("channels")
     .select("*")
     .eq("id", channelId)
     .single()
 
-  if (!channel) {
+  if (channelError || !channel) {
+    redirect(`/workspaces/${workspaceId}`)
+  }
+
+  // Verify channel belongs to workspace
+  if (channel.workspace_id !== workspaceId) {
     redirect(`/workspaces/${workspaceId}`)
   }
 
   // Fetch messages for the channel
-  const { data: messages } = await supabase
+  const { data: messages, error: messagesError } = await supabase
     .from("messages")
     .select(
       `
@@ -32,7 +49,13 @@ export async function getChannelData(workspaceId: string, channelId: string) {
       profile:user_id (
         id,
         email,
-        display_name
+        display_name,
+        avatar_url
+      ),
+      reactions (
+        id,
+        emoji,
+        user_id
       )
     `
     )
