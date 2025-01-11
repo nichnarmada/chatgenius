@@ -277,7 +277,7 @@ export function DMPage({
       </div>
 
       {/* Message Input */}
-      <div className="border-t p-4">
+      <div className="flex h-[60px] min-h-[60px] items-center border-t px-4">
         <DMChatInput
           onSubmit={handleSubmit}
           recipientName={otherUser.display_name || otherUser.email}

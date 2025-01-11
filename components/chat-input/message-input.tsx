@@ -24,7 +24,6 @@ export function MessageInput({
           placeholder={placeholder}
           autoFocus={autoFocus}
           disabled={disabled}
-          className="min-h-[44px]"
         />
       </div>
       {onCancel && (

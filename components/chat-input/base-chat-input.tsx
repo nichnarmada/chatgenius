@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { Send } from "lucide-react"
 import { Button } from "../ui/button"
-import { Textarea } from "../ui/textarea"
+import { Input } from "../ui/input"
 import { Alert, AlertDescription } from "../ui/alert"
 import { AlertCircle } from "lucide-react"
 
@@ -58,7 +58,7 @@ export function BaseChatInput({
   }
 
   return (
-    <div className="space-y-2">
+    <div className="w-full">
       {showError && error && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
@@ -69,16 +69,17 @@ export function BaseChatInput({
         onSubmit={handleSubmit}
         className={`flex h-full items-center ${className}`}
       >
-        <Textarea
+        <Input
+          type="text"
           value={content}
           onChange={(e) => setContent(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="mr-2 min-h-[44px] flex-grow resize-none"
+          className="mr-2 flex-grow"
           disabled={isLoading || disabled}
           autoFocus={autoFocus}
         />
-        <Button type="submit" disabled={isLoading || disabled}>
+        <Button type="submit" size="sm" disabled={isLoading || disabled}>
           <Send className="h-4 w-4" />
         </Button>
       </form>

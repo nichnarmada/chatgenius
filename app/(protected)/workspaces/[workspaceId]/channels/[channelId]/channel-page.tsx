@@ -250,7 +250,9 @@ export function ChannelPage({
       </div>
 
       {/* Message Input */}
-      <ChannelChatInput channelName={channel.name} onSubmit={handleSubmit} />
+      <div className="flex h-[60px] min-h-[60px] items-center border-t px-4">
+        <ChannelChatInput channelName={channel.name} onSubmit={handleSubmit} />
+      </div>
     </div>
   )
 }

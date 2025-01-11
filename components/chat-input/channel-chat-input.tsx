@@ -12,12 +12,10 @@ export function ChannelChatInput({
   disabled,
 }: ChannelChatInputProps) {
   return (
-    <div className="h-[60px] min-h-[60px] border-t p-4">
-      <BaseChatInput
-        onSubmit={onSubmit}
-        placeholder={`Message #${channelName}`}
-        disabled={disabled}
-      />
-    </div>
+    <BaseChatInput
+      onSubmit={onSubmit}
+      placeholder={`Message #${channelName}`}
+      disabled={disabled}
+    />
   )
 }
