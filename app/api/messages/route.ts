@@ -1,5 +1,5 @@
 import { createClient } from "@/utils/supabase/server"
-import { NextResponse } from "next/server"
+import { NextResponse, type NextRequest } from "next/server"
 
 export async function POST(request: Request) {
   try {
@@ -122,6 +122,137 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(message)
+  } catch (error) {
+    console.error("Unexpected error:", error)
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    )
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const json = await request.json()
+    const { content, messageId } = json
+
+    if (!content) {
+      return NextResponse.json(
+        { error: "Message content is required" },
+        { status: 400 }
+      )
+    }
+
+    if (!messageId) {
+      return NextResponse.json(
+        { error: "Message ID is required" },
+        { status: 400 }
+      )
+    }
+
+    const supabase = await createClient()
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser()
+
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: "Authentication error" },
+        { status: 401 }
+      )
+    }
+
+    // Update message
+    const { data: message, error: updateError } = await supabase
+      .from("messages")
+      .update({ content })
+      .eq("id", messageId)
+      .eq("user_id", user.id) // Ensure user owns the message
+      .select(
+        `
+        *,
+        profile:user_id (
+          id,
+          email,
+          display_name,
+          avatar_url
+        ),
+        reactions (
+          id,
+          emoji,
+          user_id
+        )
+      `
+      )
+      .single()
+
+    if (updateError) {
+      console.error("Message update error:", updateError)
+      return NextResponse.json(
+        { error: "Error updating message" },
+        { status: 500 }
+      )
+    }
+
+    if (!message) {
+      return NextResponse.json(
+        { error: "Message not found or you don't have permission to edit it" },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json(message)
+  } catch (error) {
+    console.error("Unexpected error:", error)
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const searchParams = request.nextUrl.searchParams
+    const messageId = searchParams.get("messageId")
+
+    if (!messageId) {
+      return NextResponse.json(
+        { error: "Message ID is required" },
+        { status: 400 }
+      )
+    }
+
+    const supabase = await createClient()
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser()
+
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: "Authentication error" },
+        { status: 401 }
+      )
+    }
+
+    // Delete message
+    const { error: deleteError } = await supabase
+      .from("messages")
+      .delete()
+      .eq("id", messageId)
+      .eq("user_id", user.id) // Ensure user owns the message
+
+    if (deleteError) {
+      console.error("Message deletion error:", deleteError)
+      return NextResponse.json(
+        { error: "Error deleting message" },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({ success: true })
   } catch (error) {
     console.error("Unexpected error:", error)
     return NextResponse.json(

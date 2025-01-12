@@ -94,35 +94,50 @@ export function Message({
 
   const handleUpdate = async (content: string) => {
     try {
-      const response = await fetch(`/api/messages/${message.id}`, {
+      const response = await fetch("/api/messages", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ content, messageId: message.id }),
       })
-      const data = await response.json()
-      if (data.message) {
-        onUpdate(data.message)
-        setIsEditing(false)
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || "Failed to update message")
       }
+
+      const updatedMessage = await response.json()
+      onUpdate(updatedMessage)
+      setIsEditing(false)
     } catch (error) {
       console.error("Error updating message:", error)
+      alert("Failed to update message")
     }
   }
 
   const handleDelete = async () => {
     try {
-      const response = await fetch(`/api/messages/${message.id}`, {
+      const response = await fetch(`/api/messages?messageId=${message.id}`, {
         method: "DELETE",
       })
-      if (response.ok) {
-        onDelete(message.id)
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || "Failed to delete message")
       }
+
+      onDelete(message.id)
     } catch (error) {
       console.error("Error deleting message:", error)
+      alert("Failed to delete message")
     }
   }
+
+  // Only show edit/delete options if user owns the message
+  const canEditMessage =
+    currentUserId ===
+    (isDirectMessage(message) ? message.sender_id : message.user_id)
 
   if (!userProfile) {
     return null // or some fallback UI
@@ -183,27 +198,29 @@ export function Message({
             </PopoverContent>
           </Popover>
 
-          {/* More Options Menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-7 px-2">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setIsEditing(true)}>
-                <Pencil className="mr-2 h-4 w-4" />
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="text-destructive"
-                onClick={handleDelete}
-              >
-                <Trash className="mr-2 h-4 w-4" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* More Options Menu - Only show if user can edit */}
+          {canEditMessage && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-7 px-2">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-destructive"
+                  onClick={handleDelete}
+                >
+                  <Trash className="mr-2 h-4 w-4" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
 
         <Avatar className="h-8 w-8">
