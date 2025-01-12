@@ -43,7 +43,7 @@ import type { UserStatusType } from "@/types/user-status"
 import { USER_STATUS_CONFIG, USER_STATUS_ORDER } from "@/constants/user-status"
 import { Workspace, Channel } from "@/types/workspace"
 import { Profile } from "@/types/profile"
-import { User } from "@supabase/supabase-js"
+import { User, RealtimePostgresChangesPayload } from "@supabase/supabase-js"
 
 interface WorkspaceLayoutClientProps {
   children: React.ReactNode
@@ -87,12 +87,13 @@ function WorkspacePlaceholder({ name }: WorkspacePlaceholderProps) {
 export function WorkspaceLayoutClient({
   children,
   workspace: initialWorkspace,
-  channels,
+  channels: initialChannels,
   user,
   profile,
   workspaceUsers: initialWorkspaceUsers,
 }: WorkspaceLayoutClientProps) {
   const [workspace, setWorkspace] = useState(initialWorkspace)
+  const [channels, setChannels] = useState(initialChannels)
   const [workspaceUsers, setWorkspaceUsers] = useState(initialWorkspaceUsers)
   const [userStatuses, setUserStatuses] = useState<
     Record<string, UserStatusType>
@@ -219,6 +220,53 @@ export function WorkspaceLayoutClient({
       supabase.removeChannel(workspaceChannel)
     }
   }, [workspace.id, workspace.workspace_members, supabase])
+
+  useEffect(() => {
+    const channelsChannel = supabase
+      .channel("channels_changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "channels",
+          filter: `workspace_id=eq.${workspace.id}`,
+        },
+        async (
+          payload: RealtimePostgresChangesPayload<{
+            id: string
+            name: string
+            workspace_id: string
+            created_by_user_id: string
+            created_at: string
+            updated_at: string
+            description: string | null
+          }>
+        ) => {
+          if (payload.eventType === "INSERT") {
+            // Add new channel to the list
+            setChannels((prev) => [...prev, payload.new])
+          } else if (payload.eventType === "DELETE") {
+            // Remove deleted channel from the list
+            setChannels((prev) =>
+              prev.filter((channel) => channel.id !== payload.old.id)
+            )
+          } else if (payload.eventType === "UPDATE") {
+            // Update modified channel in the list
+            setChannels((prev) =>
+              prev.map((channel) =>
+                channel.id === payload.new.id ? payload.new : channel
+              )
+            )
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channelsChannel)
+    }
+  }, [workspace.id, supabase])
 
   // Check if user is owner
   const isOwner = workspace.workspace_members?.some(
