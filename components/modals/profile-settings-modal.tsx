@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Dialog,
   DialogContent,
@@ -28,17 +28,48 @@ export function ProfileSettingsModal({
   profile,
 }: ProfileSettingsModalProps) {
   const [displayName, setDisplayName] = useState(profile?.display_name || "")
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
   const supabase = createClient()
+
+  const handleImageSelect = (file: File) => {
+    setSelectedFile(file)
+    const objectUrl = URL.createObjectURL(file)
+    setPreviewUrl(objectUrl)
+  }
 
   const handleSave = async () => {
     try {
       setIsLoading(true)
 
+      // Upload avatar if a new file was selected
+      let avatarUrl = profile?.avatar_url
+      if (selectedFile) {
+        const formData = new FormData()
+        formData.append("avatar", selectedFile)
+
+        const response = await fetch("/api/users/avatar", {
+          method: "POST",
+          body: formData,
+        })
+
+        if (!response.ok) {
+          throw new Error("Failed to upload avatar")
+        }
+
+        const data = await response.json()
+        avatarUrl = data.avatarUrl
+      }
+
+      // Update profile
       const { error } = await supabase
         .from("profiles")
-        .update({ display_name: displayName })
+        .update({
+          display_name: displayName,
+          avatar_url: avatarUrl,
+        })
         .eq("id", user.id)
 
       if (error) throw error
@@ -47,6 +78,11 @@ export function ProfileSettingsModal({
         title: "Profile updated",
         description: "Your profile has been updated successfully.",
       })
+
+      // Clean up preview URL
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl)
+      }
 
       onClose()
     } catch (error) {
@@ -61,6 +97,20 @@ export function ProfileSettingsModal({
     }
   }
 
+  // Clean up preview URL and reset form when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      // Reset image states
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl)
+        setPreviewUrl(null)
+        setSelectedFile(null)
+      }
+      // Reset display name to original value
+      setDisplayName(profile?.display_name || "")
+    }
+  }, [isOpen, previewUrl, profile?.display_name])
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
@@ -69,7 +119,11 @@ export function ProfileSettingsModal({
         </DialogHeader>
         <div className="space-y-6">
           <div className="flex justify-center">
-            <AvatarUpload currentAvatarUrl={profile?.avatar_url} />
+            <AvatarUpload
+              currentAvatarUrl={profile?.avatar_url}
+              previewUrl={previewUrl}
+              onImageSelect={handleImageSelect}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="displayName">Display Name</Label>
@@ -89,7 +143,7 @@ export function ProfileSettingsModal({
               Cancel
             </Button>
             <Button onClick={handleSave} disabled={isLoading}>
-              Save Changes
+              {isLoading ? "Saving..." : "Save Changes"}
             </Button>
           </div>
         </div>

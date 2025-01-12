@@ -244,10 +244,40 @@ export function WorkspaceLayoutClient({
       )
       .subscribe()
 
+    // Add profile changes subscription
+    const profileChannel = supabase
+      .channel("profile_changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "profiles",
+          filter: `id=in.(${workspace.workspace_members.map((m) => m.user_id).join(",")})`,
+        },
+        async (payload) => {
+          if (payload.new) {
+            // Update workspaceUsers state
+            setWorkspaceUsers((prev) =>
+              prev.map((p) =>
+                p.id === (payload.new as any).id ? { ...p, ...payload.new } : p
+              )
+            )
+
+            // If this is the current user's profile, update the profile prop
+            if ((payload.new as any).id === user.id) {
+              router.refresh()
+            }
+          }
+        }
+      )
+      .subscribe()
+
     return () => {
       supabase.removeChannel(workspaceChannel)
+      supabase.removeChannel(profileChannel)
     }
-  }, [workspace.id, supabase])
+  }, [workspace.id, workspace.workspace_members, supabase, user.id, router])
 
   useEffect(() => {
     const channelsChannel = supabase
