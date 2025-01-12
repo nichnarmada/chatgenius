@@ -114,9 +114,15 @@ export function WorkspaceLayoutClient({
 
   useEffect(() => {
     const fetchStatuses = async () => {
+      // Get all workspace member IDs
+      const memberIds = workspace.workspace_members.map(
+        (member) => member.user_id
+      )
+
       const { data: statuses } = await supabase
         .from("user_status")
         .select("user_id, status")
+        .in("user_id", memberIds)
 
       if (statuses) {
         const statusMap = statuses.reduce(
@@ -140,6 +146,7 @@ export function WorkspaceLayoutClient({
           event: "*",
           schema: "public",
           table: "user_status",
+          filter: `user_id=in.(${workspace.workspace_members.map((m) => m.user_id).join(",")})`,
         },
         (payload) => {
           if (payload.new) {
@@ -155,7 +162,7 @@ export function WorkspaceLayoutClient({
     return () => {
       supabase.removeChannel(statusChannel)
     }
-  }, [])
+  }, [workspace.workspace_members])
 
   useEffect(() => {
     const workspaceChannel = supabase
@@ -193,8 +200,29 @@ export function WorkspaceLayoutClient({
           table: "workspace_members",
           filter: `workspace_id=eq.${workspace.id}`,
         },
-        async () => {
-          const { data: updatedUsers } = await supabase
+        async (
+          payload: RealtimePostgresChangesPayload<{
+            workspace_id: string
+            user_id: string
+            role: "owner" | "member"
+          }>
+        ) => {
+          // Get all current workspace members
+          const { data: workspaceMembers } = await supabase
+            .from("workspace_members")
+            .select("*")
+            .eq("workspace_id", workspace.id)
+
+          if (!workspaceMembers) return
+
+          // Update workspace members list
+          setWorkspace((prev) => ({
+            ...prev,
+            workspace_members: workspaceMembers,
+          }))
+
+          // Fetch ALL profiles for workspace members
+          const { data: allProfiles } = await supabase
             .from("profiles")
             .select(
               `
@@ -206,11 +234,11 @@ export function WorkspaceLayoutClient({
             )
             .in(
               "id",
-              workspace.workspace_members.map((member) => member.user_id)
+              workspaceMembers.map((member) => member.user_id)
             )
 
-          if (updatedUsers) {
-            setWorkspaceUsers(updatedUsers)
+          if (allProfiles) {
+            setWorkspaceUsers(allProfiles)
           }
         }
       )
@@ -219,7 +247,7 @@ export function WorkspaceLayoutClient({
     return () => {
       supabase.removeChannel(workspaceChannel)
     }
-  }, [workspace.id, workspace.workspace_members, supabase])
+  }, [workspace.id, supabase])
 
   useEffect(() => {
     const channelsChannel = supabase
