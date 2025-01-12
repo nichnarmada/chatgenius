@@ -40,7 +40,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { LeaveWorkspaceModal } from "@/components/modals/leave-workspace-modal"
 import { UserStatus } from "@/components/user-status"
 import type { UserStatusType } from "@/types/user-status"
-import { USER_STATUS_CONFIG, USER_STATUS_ORDER } from "@/constants/user-status"
+import { getStatusConfig, USER_STATUS_ORDER } from "@/constants/user-status"
 import { Workspace, Channel } from "@/types/workspace"
 import { Profile } from "@/types/profile"
 import { User, RealtimePostgresChangesPayload } from "@supabase/supabase-js"
@@ -148,11 +148,20 @@ export function WorkspaceLayoutClient({
           table: "user_status",
           filter: `user_id=in.(${workspace.workspace_members.map((m) => m.user_id).join(",")})`,
         },
-        (payload) => {
-          if (payload.new) {
+        (
+          payload: RealtimePostgresChangesPayload<{
+            user_id: string
+            status: UserStatusType
+          }>
+        ) => {
+          const newStatus = payload.new as {
+            user_id: string
+            status: UserStatusType
+          }
+          if (newStatus) {
             setUserStatuses((prev) => ({
               ...prev,
-              [(payload.new as any).user_id]: (payload.new as any).status,
+              [newStatus.user_id]: newStatus.status,
             }))
           }
         }
@@ -162,7 +171,7 @@ export function WorkspaceLayoutClient({
     return () => {
       supabase.removeChannel(statusChannel)
     }
-  }, [workspace.workspace_members])
+  }, [workspace.workspace_members, supabase])
 
   useEffect(() => {
     const workspaceChannel = supabase
@@ -255,17 +264,18 @@ export function WorkspaceLayoutClient({
           table: "profiles",
           filter: `id=in.(${workspace.workspace_members.map((m) => m.user_id).join(",")})`,
         },
-        async (payload) => {
-          if (payload.new) {
+        async (payload: RealtimePostgresChangesPayload<Profile>) => {
+          const newProfile = payload.new as Profile
+          if (newProfile) {
             // Update workspaceUsers state
             setWorkspaceUsers((prev) =>
               prev.map((p) =>
-                p.id === (payload.new as any).id ? { ...p, ...payload.new } : p
+                p.id === newProfile.id ? { ...p, ...newProfile } : p
               )
             )
 
             // If this is the current user's profile, update the profile prop
-            if ((payload.new as any).id === user.id) {
+            if (newProfile.id === user.id) {
               router.refresh()
             }
           }
@@ -622,15 +632,13 @@ export function WorkspaceLayoutClient({
                     className="min-w-[150px]"
                   >
                     {USER_STATUS_ORDER.map((statusKey) => {
-                      const status = USER_STATUS_CONFIG[statusKey]
+                      const status = getStatusConfig(statusKey)
                       return (
                         <DropdownMenuItem
                           key={status.type}
                           onClick={() => updateStatus(status.type)}
                         >
-                          <div
-                            className={`h-2.5 w-2.5 rounded-full ${status.color}`}
-                          />
+                          <UserStatus status={status.type} />
                           <span>{status.text}</span>
                         </DropdownMenuItem>
                       )
