@@ -131,7 +131,7 @@ export async function GET(request: NextRequest) {
     // Combine messages with their profiles and reactions
     const messagesWithData = messages?.map((message) => ({
       ...message,
-      profiles: profiles?.find((profile) => profile.id === message.user_id),
+      profile: profiles?.find((profile) => profile.id === message.user_id),
       reactions:
         reactions?.filter(
           (reaction) => reaction.thread_message_id === message.id
@@ -274,7 +274,7 @@ export async function POST(request: NextRequest) {
     // Combine the data
     const message = {
       ...threadMessage,
-      profiles: profile,
+      profile: profile,
     }
 
     return NextResponse.json({ message })

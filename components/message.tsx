@@ -8,6 +8,7 @@ import {
   Smile,
 } from "lucide-react"
 import { Button } from "./ui/button"
+import { Badge } from "./ui/badge"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,6 +30,7 @@ interface MessageProps {
   onAddReaction?: (messageId: string, emoji: string) => Promise<void>
   onRemoveReaction?: (messageId: string, emoji: string) => Promise<void>
   showThread?: boolean
+  isInThreadModal?: boolean
 }
 
 export function Message({
@@ -38,6 +40,7 @@ export function Message({
   onAddReaction,
   onRemoveReaction,
   showThread = true,
+  isInThreadModal = false,
 }: MessageProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [isThreadOpen, setIsThreadOpen] = useState(false)
@@ -281,15 +284,22 @@ export function Message({
             )}
 
             {/* Thread Count - Only show for channel messages */}
-            {!isDirectMessage(message) && message.thread_count > 0 && (
-              <button
-                onClick={() => setIsThreadOpen(true)}
-                className="flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs hover:bg-muted"
-              >
-                <MessageSquareText className="h-3 w-3" />
-                <span>{message.thread_count}</span>
-              </button>
-            )}
+            {!isDirectMessage(message) &&
+              message.thread_count > 0 &&
+              (isInThreadModal ? (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  <MessageSquareText className="h-3 w-3" />
+                  <span>{message.thread_count}</span>
+                </Badge>
+              ) : (
+                <button
+                  onClick={() => setIsThreadOpen(true)}
+                  className="flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs hover:bg-muted"
+                >
+                  <MessageSquareText className="h-3 w-3" />
+                  <span>{message.thread_count}</span>
+                </button>
+              ))}
           </div>
         </div>
       </div>

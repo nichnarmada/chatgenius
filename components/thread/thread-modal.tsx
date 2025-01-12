@@ -60,6 +60,15 @@ export function ThreadModal({
       }
       if (data.message) {
         setThreadMessages((prev) => [...prev, data.message])
+
+        // Fetch updated parent message to get the new thread count
+        const updatedResponse = await fetch(`/api/messages/${parentMessage.id}`)
+        if (updatedResponse.ok) {
+          const { message: updatedParentMessage } = await updatedResponse.json()
+          if (updatedParentMessage) {
+            onUpdate(updatedParentMessage)
+          }
+        }
       }
     } catch (error) {
       console.error("Error sending thread reply:", error)
@@ -180,6 +189,7 @@ export function ThreadModal({
                 }
               }}
               showThread={false}
+              isInThreadModal={true}
             />
           </div>
 
@@ -203,6 +213,20 @@ export function ThreadModal({
                     setThreadMessages((prev) =>
                       prev.filter((m) => m.id !== messageId)
                     )
+                    // Fetch updated parent message to get the new thread count
+                    fetch(`/api/messages/${parentMessage.id}`)
+                      .then((response) => response.json())
+                      .then(({ message: updatedParentMessage }) => {
+                        if (updatedParentMessage) {
+                          onUpdate(updatedParentMessage)
+                        }
+                      })
+                      .catch((error) => {
+                        console.error(
+                          "Error fetching updated parent message:",
+                          error
+                        )
+                      })
                   }}
                   onAddReaction={handleAddReaction}
                   onRemoveReaction={handleRemoveReaction}
