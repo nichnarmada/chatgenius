@@ -266,20 +266,7 @@ export function DMPage({
   }
 
   return (
-    <div className="flex h-full flex-1 flex-col">
-      {/* DM Header */}
-      <div className="flex h-[60px] min-h-[60px] items-center border-b px-4">
-        <Avatar className="mr-2 h-8 w-8">
-          <AvatarImage src={otherUser.avatar_url || undefined} />
-          <AvatarFallback>
-            {otherUser.display_name?.charAt(0) || otherUser.email?.charAt(0)}
-          </AvatarFallback>
-        </Avatar>
-        <h2 className="text-lg font-semibold">
-          {otherUser.display_name || otherUser.email}
-        </h2>
-      </div>
-
+    <>
       {/* Messages */}
       <div className="flex-1 overflow-y-auto" ref={scrollRef}>
         <div className="py-4">
@@ -326,6 +313,6 @@ export function DMPage({
           />
         </form>
       </div>
-    </div>
+    </>
   )
 }

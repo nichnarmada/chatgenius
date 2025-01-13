@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { createClient } from "@/utils/supabase/client"
-import { useRouter, usePathname } from "next/navigation"
+import { useRouter, usePathname, useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import {
   Hash,
@@ -44,6 +44,7 @@ import { getStatusConfig, USER_STATUS_ORDER } from "@/constants/user-status"
 import { Workspace, Channel } from "@/types/workspace"
 import { Profile } from "@/types/profile"
 import { User, RealtimePostgresChangesPayload } from "@supabase/supabase-js"
+import { WorkspaceHeader } from "@/components/header/workspace-header"
 
 interface WorkspaceLayoutClientProps {
   children: React.ReactNode
@@ -111,6 +112,11 @@ export function WorkspaceLayoutClient({
   const pathname = usePathname()
   const supabase = createClient()
   const { toast } = useToast()
+  const params = useParams()
+
+  // Get current channel or user from URL params
+  const currentChannel = channels.find((c) => c.id === params.channelId)
+  const currentUser = workspaceUsers.find((u) => u.id === params.userId)
 
   useEffect(() => {
     const fetchStatuses = async () => {
@@ -669,7 +675,16 @@ export function WorkspaceLayoutClient({
       </div>
 
       {/* Main Content */}
-      <main className="flex flex-1 flex-col overflow-hidden">{children}</main>
+      <main className="flex flex-1 flex-col overflow-hidden">
+        <div className="flex h-full flex-1 flex-col">
+          <WorkspaceHeader
+            type={params.channelId ? "channel" : "dm"}
+            channel={currentChannel}
+            otherUser={currentUser}
+          />
+          {children}
+        </div>
+      </main>
 
       {/* Modals */}
       <SignOutModal
