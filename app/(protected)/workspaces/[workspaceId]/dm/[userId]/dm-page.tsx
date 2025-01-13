@@ -170,26 +170,46 @@ export function DMPage({
     }
   }, [messages])
 
-  async function handleSubmit(content: string) {
+  async function handleSubmit(content: string, files?: File[]) {
     setIsLoading(true)
     setError(null)
 
     try {
-      const response = await fetch("/api/direct-messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          content,
-          workspaceId: workspace.id,
-          receiverId: otherUser.id,
-        }),
-      })
+      if (files && files.length > 0) {
+        // Handle file upload
+        const formData = new FormData()
+        formData.append("content", content)
+        formData.append("workspaceId", workspace.id)
+        formData.append("receiverId", otherUser.id)
+        files.forEach((file) => formData.append("file", file))
 
-      const data = await response.json()
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to send message")
+        const response = await fetch("/api/files", {
+          method: "POST",
+          body: formData,
+        })
+
+        const data = await response.json()
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to upload file")
+        }
+      } else {
+        // Handle text-only message
+        const response = await fetch("/api/direct-messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            content,
+            workspaceId: workspace.id,
+            receiverId: otherUser.id,
+          }),
+        })
+
+        const data = await response.json()
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to send message")
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to send message")

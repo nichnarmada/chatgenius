@@ -1,5 +1,5 @@
 import { useState, useRef } from "react"
-import { Send } from "lucide-react"
+import { Send, Paperclip, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -7,7 +7,7 @@ import { AlertCircle } from "lucide-react"
 import { Loader2 } from "lucide-react"
 
 export interface ChatInputProps {
-  onSubmit: (content: string) => Promise<void>
+  onSubmit: (content: string, files?: File[]) => Promise<void>
   placeholder?: string
   disabled?: boolean
   autoFocus?: boolean
@@ -30,7 +30,9 @@ export function ChatInput({
   error = null,
 }: ChatInputProps) {
   const [content, setContent] = useState(defaultValue)
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const inputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   function handleKeyDown(e: React.KeyboardEvent) {
     const isEnterKey = e.key === "Enter"
@@ -42,14 +44,25 @@ export function ChatInput({
       !hasShiftKey &&
       !disabled &&
       !isLoading &&
-      content.trim()
+      (content.trim() || selectedFiles.length > 0)
     ) {
       e.preventDefault()
-      onSubmit(content.trim())
+      onSubmit(content.trim(), selectedFiles)
       setContent("")
+      setSelectedFiles([])
       // Focus the input after successful submission
       inputRef.current?.focus()
     }
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    setSelectedFiles((prev) => [...prev, ...files])
+    e.target.value = "" // Reset input
+  }
+
+  const removeFile = (index: number) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index))
   }
 
   return (
@@ -60,6 +73,33 @@ export function ChatInput({
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
+
+      {selectedFiles.length > 0 && (
+        <div className="mb-2 space-y-2">
+          {selectedFiles.map((file, index) => (
+            <div
+              key={index}
+              className="flex items-center gap-2 rounded-md bg-secondary/50 p-2"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{file.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {(file.size / 1024).toFixed(1)} KB
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => removeFile(index)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className={`flex h-full items-center ${className}`}>
         <Input
           ref={inputRef}
@@ -72,14 +112,39 @@ export function ChatInput({
           disabled={disabled || isLoading}
           autoFocus={autoFocus}
         />
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          className="hidden"
+          onChange={handleFileSelect}
+          multiple
+        />
+
         <Button
           type="button"
           size="sm"
-          disabled={!content.trim() || isLoading || disabled}
+          variant="ghost"
+          className="mr-2"
+          disabled={disabled || isLoading}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <Paperclip className="h-4 w-4" />
+        </Button>
+
+        <Button
+          type="button"
+          size="sm"
+          disabled={
+            (!content.trim() && selectedFiles.length === 0) ||
+            isLoading ||
+            disabled
+          }
           onClick={() => {
-            if (content.trim()) {
-              onSubmit(content.trim())
+            if (content.trim() || selectedFiles.length > 0) {
+              onSubmit(content.trim(), selectedFiles)
               setContent("")
+              setSelectedFiles([])
               inputRef.current?.focus()
             }
           }}
@@ -111,7 +176,7 @@ export function MessageInput({
   return (
     <div className="flex gap-2">
       <ChatInput
-        onSubmit={onSubmit}
+        onSubmit={(content) => onSubmit(content)}
         defaultValue={defaultValue}
         autoFocus={autoFocus}
         placeholder="Edit message..."

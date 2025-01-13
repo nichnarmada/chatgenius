@@ -19,6 +19,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 import { MessageInput } from "./chat-input"
 import { ThreadModal } from "./thread/thread-modal"
+import { FileAttachment } from "./file-attachment"
 import { createClient } from "@/utils/supabase/client"
 import { Message as MessageType, DirectMessage } from "@/types/message"
 import { REACTION_EMOJIS } from "@/constants/emojis"
@@ -42,6 +43,12 @@ export function Message({
   showThread = true,
   isInThreadModal = false,
 }: MessageProps) {
+  console.log("Message props received:", {
+    messageId: message.id,
+    content: message.content,
+    files: message.files,
+  })
+
   const [isEditing, setIsEditing] = useState(false)
   const [isThreadOpen, setIsThreadOpen] = useState(false)
   const [isReactionOpen, setIsReactionOpen] = useState<boolean>(false)
@@ -131,6 +138,39 @@ export function Message({
     } catch (error) {
       console.error("Error deleting message:", error)
       alert("Failed to delete message")
+    }
+  }
+
+  const handleFileDelete = async (fileId: string) => {
+    try {
+      // If this is the only file and there's no content, delete the whole message
+      if (
+        message.files?.length === 1 &&
+        !message.content &&
+        message.files[0].id === fileId
+      ) {
+        await handleDelete()
+        return
+      }
+
+      // Otherwise, just delete the file
+      const response = await fetch(`/api/files?fileId=${fileId}`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || "Failed to delete file")
+      }
+
+      // Update the message in the UI by filtering out the deleted file
+      onUpdate({
+        ...message,
+        files: message.files?.filter((f) => f.id !== fileId),
+      })
+    } catch (error) {
+      console.error("Error deleting file:", error)
+      alert("Failed to delete file")
     }
   }
 
@@ -251,83 +291,78 @@ export function Message({
               onCancel={() => setIsEditing(false)}
             />
           ) : (
-            <p className="text-sm">{message.content}</p>
+            <div className="space-y-2">
+              {message.content && (
+                <p className="whitespace-pre-wrap text-sm">{message.content}</p>
+              )}
+              {message.files && message.files.length > 0 && (
+                <div className="space-y-2">
+                  {message.files.map((file) => (
+                    <FileAttachment
+                      key={file.id}
+                      file={file}
+                      canDelete={canEditMessage}
+                      onDelete={handleFileDelete}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
-          {/* Reactions and Thread Count */}
-          <div className="mt-1 flex flex-wrap items-center gap-1">
-            {message.reactions && message.reactions.length > 0 && (
-              <>
-                {Object.entries(reactionGroups).map(
-                  ([emoji, { count, userIds }]) => {
-                    const hasUserReacted = Boolean(
-                      currentUserId && userIds.has(currentUserId)
-                    )
-                    return (
-                      <button
-                        key={emoji}
-                        onClick={async () => {
-                          try {
-                            if (hasUserReacted && onRemoveReaction) {
-                              await onRemoveReaction(message.id, emoji)
-                            } else if (!hasUserReacted && onAddReaction) {
-                              await onAddReaction(message.id, emoji)
-                            }
-                          } catch (error) {
-                            console.error("Error handling reaction:", error)
-                          }
-                        }}
-                        className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs hover:bg-muted ${
-                          hasUserReacted
-                            ? "border-blue-500 bg-blue-50 dark:border-blue-800 dark:bg-blue-950"
-                            : "hover:border-gray-300 dark:hover:border-gray-600"
-                        }`}
-                      >
-                        <span>{emoji}</span>
-                        <span
-                          className={
-                            hasUserReacted
-                              ? "text-blue-600 dark:text-blue-400"
-                              : ""
-                          }
-                        >
-                          {count}
-                        </span>
-                      </button>
-                    )
-                  }
-                )}
-              </>
-            )}
+          {/* Reactions */}
+          {Object.entries(reactionGroups).length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {Object.entries(reactionGroups).map(
+                ([emoji, { count, userIds }]) => {
+                  const hasUserReacted = Boolean(
+                    currentUserId && userIds.has(currentUserId)
+                  )
+                  return (
+                    <Badge
+                      key={emoji}
+                      variant={hasUserReacted ? "default" : "secondary"}
+                      className="cursor-pointer"
+                      onClick={() => {
+                        if (hasUserReacted && onRemoveReaction) {
+                          onRemoveReaction(message.id, emoji)
+                        } else if (!hasUserReacted && onAddReaction) {
+                          onAddReaction(message.id, emoji)
+                        }
+                      }}
+                    >
+                      {emoji} {count}
+                    </Badge>
+                  )
+                }
+              )}
+            </div>
+          )}
 
-            {/* Thread Count - Only show for channel messages */}
-            {!isDirectMessage(message) &&
-              message.thread_count > 0 &&
-              (isInThreadModal ? (
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  <MessageSquareText className="h-3 w-3" />
-                  <span>{message.thread_count}</span>
-                </Badge>
-              ) : (
-                <button
-                  onClick={() => setIsThreadOpen(true)}
-                  className="flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs hover:bg-muted"
-                >
-                  <MessageSquareText className="h-3 w-3" />
-                  <span>{message.thread_count}</span>
-                </button>
-              ))}
-          </div>
+          {/* Thread Count Badge */}
+          {!isDirectMessage(message) &&
+            message.thread_count > 0 &&
+            !isInThreadModal && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="mt-2 h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
+                onClick={() => setIsThreadOpen(true)}
+              >
+                {message.thread_count}{" "}
+                {message.thread_count === 1 ? "reply" : "replies"}
+              </Button>
+            )}
         </div>
       </div>
 
       {/* Thread Modal */}
-      {!isDirectMessage(message) && (
+      {isThreadOpen && !isDirectMessage(message) && (
         <ThreadModal
           isOpen={isThreadOpen}
           parentMessage={message}
-          onUpdate={onUpdate}
           onClose={() => setIsThreadOpen(false)}
+          onUpdate={onUpdate}
         />
       )}
     </>

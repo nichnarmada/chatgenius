@@ -108,6 +108,14 @@ export async function POST(request: Request) {
           id,
           email,
           display_name
+        ),
+        files (
+          id,
+          name,
+          size,
+          type,
+          url,
+          created_at
         )
       `
       )
@@ -182,6 +190,14 @@ export async function PATCH(request: Request) {
           id,
           emoji,
           user_id
+        ),
+        files (
+          id,
+          name,
+          size,
+          type,
+          url,
+          created_at
         )
       `
       )

@@ -144,8 +144,6 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Reaction not found" }, { status: 404 })
     }
 
-    console.log("Found reaction to delete:", existingReaction.id)
-
     // Delete the reaction
     const { error: deleteError } = await supabase
       .from("reactions")
@@ -160,7 +158,6 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    console.log("Successfully deleted reaction:", existingReaction.id)
     return NextResponse.json({ success: true, id: existingReaction.id })
   } catch (error) {
     console.error("Error in DELETE /api/reactions:", error)

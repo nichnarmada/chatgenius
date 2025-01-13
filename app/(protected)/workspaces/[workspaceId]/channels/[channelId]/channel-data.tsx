@@ -57,6 +57,14 @@ export async function getChannelData(workspaceId: string, channelId: string) {
         emoji,
         user_id,
         created_at
+      ),
+      files (
+        id,
+        name,
+        size,
+        type,
+        url,
+        created_at
       )
     `
     )

@@ -24,8 +24,6 @@ export function ChannelPage({
   const supabase = createClient()
 
   useEffect(() => {
-    console.log("Setting up real-time subscriptions for channel:", channel.id)
-
     const messageChannel = supabase
       .channel(`channel_messages:${channel.id}`)
       .on(
@@ -37,8 +35,6 @@ export function ChannelPage({
           filter: `channel_id=eq.${channel.id}`,
         },
         async (payload) => {
-          console.log("Message change received:", payload.eventType, payload)
-
           if (payload.eventType === "INSERT") {
             if (!messages.some((msg) => msg.id === payload.new.id)) {
               const { data: message } = await supabase
@@ -63,7 +59,6 @@ export function ChannelPage({
                 .single()
 
               if (message) {
-                console.log("New message added:", message)
                 setMessages((prev) => [...prev, message as Message])
                 if (scrollRef.current) {
                   scrollRef.current.scrollTop = scrollRef.current.scrollHeight
@@ -93,7 +88,6 @@ export function ChannelPage({
               .single()
 
             if (message) {
-              console.log("Message updated:", message)
               setMessages((prev) =>
                 prev.map((msg) =>
                   msg.id === message.id ? (message as Message) : msg
@@ -101,7 +95,6 @@ export function ChannelPage({
               )
             }
           } else if (payload.eventType === "DELETE") {
-            console.log("Message deleted:", payload.old.id)
             setMessages((prev) =>
               prev.filter((msg) => msg.id !== payload.old.id)
             )
@@ -116,14 +109,11 @@ export function ChannelPage({
           table: "reactions",
         },
         async (payload) => {
-          console.log("Reaction change received:", payload.eventType, payload)
-
           if (payload.eventType === "DELETE") {
             const oldReaction = payload.old as {
               message_id: string
               id: string
             }
-            console.log("Reaction deleted:", oldReaction)
 
             // Immediately update the local state
             setMessages((prev) =>
@@ -144,10 +134,6 @@ export function ChannelPage({
             const messageId = (payload.new as { message_id?: string })
               ?.message_id
             if (messageId) {
-              console.log(
-                "Fetching updated message for reaction change:",
-                messageId
-              )
               const { data: message } = await supabase
                 .from("messages")
                 .select(
@@ -171,10 +157,6 @@ export function ChannelPage({
                 .single()
 
               if (message) {
-                console.log(
-                  "Updating message with new reactions state:",
-                  message
-                )
                 setMessages((prev) =>
                   prev.map((msg) =>
                     msg.id === messageId ? (message as Message) : msg
@@ -190,7 +172,6 @@ export function ChannelPage({
       })
 
     return () => {
-      console.log("Cleaning up subscriptions")
       supabase.removeChannel(messageChannel)
     }
   }, [channel.id, supabase])
@@ -201,25 +182,44 @@ export function ChannelPage({
     }
   }, [messages])
 
-  async function handleSubmit(content: string) {
+  async function handleSubmit(content: string, files?: File[]) {
     setIsLoading(true)
     setError(null)
 
     try {
-      const response = await fetch("/api/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          content,
-          channelId: channel.id,
-        }),
-      })
+      if (files && files.length > 0) {
+        // Handle file upload
+        const formData = new FormData()
+        formData.append("content", content)
+        formData.append("channelId", channel.id)
+        files.forEach((file) => formData.append("file", file))
 
-      const data = await response.json()
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to send message")
+        const response = await fetch("/api/files", {
+          method: "POST",
+          body: formData,
+        })
+
+        const data = await response.json()
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to upload file")
+        }
+      } else {
+        // Handle text-only message
+        const response = await fetch("/api/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            content,
+            channelId: channel.id,
+          }),
+        })
+
+        const data = await response.json()
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to send message")
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to send message")

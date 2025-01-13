@@ -33,6 +33,14 @@ export async function POST(req: Request) {
           email,
           display_name,
           avatar_url
+        ),
+        files (
+          id,
+          name,
+          size,
+          type,
+          url,
+          created_at
         )
       `
       )
