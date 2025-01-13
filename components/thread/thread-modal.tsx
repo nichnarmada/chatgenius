@@ -3,7 +3,7 @@ import { ThreadMessage as ThreadMessageType } from "@/types/thread"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog"
 import { Message } from "../message"
 import { ThreadMessage } from "./thread-message"
-import { ThreadChatInput } from "../chat-input"
+import { ChatInput } from "../chat-input"
 import { useEffect, useState } from "react"
 
 interface ThreadModalProps {
@@ -20,7 +20,9 @@ export function ThreadModal({
   onUpdate,
 }: ThreadModalProps) {
   const [threadMessages, setThreadMessages] = useState<ThreadMessageType[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [isLoadingMessages, setIsLoadingMessages] = useState(true)
 
   useEffect(() => {
     if (isOpen && parentMessage) {
@@ -30,6 +32,7 @@ export function ThreadModal({
 
   const loadThreadMessages = async () => {
     try {
+      setIsLoadingMessages(true)
       const response = await fetch(`/api/messages/${parentMessage.id}/threads`)
       const data = await response.json()
       if (data.messages) {
@@ -38,11 +41,14 @@ export function ThreadModal({
     } catch (error) {
       console.error("Error loading thread messages:", error)
     } finally {
-      setIsLoading(false)
+      setIsLoadingMessages(false)
     }
   }
 
   const handleNewReply = async (content: string) => {
+    setIsLoading(true)
+    setError(null)
+
     try {
       const response = await fetch(
         `/api/messages/${parentMessage.id}/threads`,
@@ -70,9 +76,11 @@ export function ThreadModal({
           }
         }
       }
-    } catch (error) {
-      console.error("Error sending thread reply:", error)
-      throw error
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to send reply")
+      throw err
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -195,7 +203,7 @@ export function ThreadModal({
 
           {/* Thread Messages */}
           <div>
-            {isLoading ? (
+            {isLoadingMessages ? (
               <div className="text-center">Loading replies...</div>
             ) : threadMessages.length > 0 ? (
               threadMessages.map((message) => (
@@ -242,7 +250,20 @@ export function ThreadModal({
 
         {/* Reply Input */}
         <div className="border-t p-4">
-          <ThreadChatInput onSubmit={handleNewReply} />
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+            }}
+          >
+            <ChatInput
+              placeholder="Reply to thread..."
+              onSubmit={handleNewReply}
+              isLoading={isLoading}
+              error={error}
+              showError={true}
+              autoFocus={true}
+            />
+          </form>
         </div>
       </DialogContent>
     </Dialog>

@@ -6,7 +6,7 @@ import { Message } from "@/components/message"
 import { DirectMessage } from "@/types/message"
 import { Profile } from "@/types/profile"
 import { Workspace } from "@/types/workspace"
-import { DMChatInput } from "@/components/chat-input"
+import { ChatInput } from "@/components/chat-input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 interface DMPageProps {
@@ -21,6 +21,8 @@ export function DMPage({
   workspace,
 }: DMPageProps) {
   const [messages, setMessages] = useState<DirectMessage[]>(initialMessages)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
 
@@ -169,21 +171,31 @@ export function DMPage({
   }, [messages])
 
   async function handleSubmit(content: string) {
-    const response = await fetch("/api/direct-messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        content,
-        workspaceId: workspace.id,
-        receiverId: otherUser.id,
-      }),
-    })
+    setIsLoading(true)
+    setError(null)
 
-    const data = await response.json()
-    if (!response.ok) {
-      throw new Error(data.error || "Failed to send message")
+    try {
+      const response = await fetch("/api/direct-messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          content,
+          workspaceId: workspace.id,
+          receiverId: otherUser.id,
+        }),
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to send message")
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to send message")
+      throw err
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -278,10 +290,21 @@ export function DMPage({
 
       {/* Message Input */}
       <div className="flex h-[60px] min-h-[60px] items-center border-t px-4">
-        <DMChatInput
-          onSubmit={handleSubmit}
-          recipientName={otherUser.display_name || otherUser.email}
-        />
+        <form
+          className="w-full"
+          onSubmit={(e) => {
+            e.preventDefault()
+          }}
+        >
+          <ChatInput
+            placeholder={`Message ${otherUser.display_name || otherUser.email}`}
+            onSubmit={handleSubmit}
+            isLoading={isLoading}
+            error={error}
+            showError={true}
+            autoFocus={true}
+          />
+        </form>
       </div>
     </div>
   )

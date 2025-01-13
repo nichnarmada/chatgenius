@@ -6,7 +6,7 @@ import { createClient } from "@/utils/supabase/client"
 import { Message as MessageComponent } from "@/components/message"
 import { Message } from "@/types/message"
 import { Channel } from "@/types/workspace"
-import { ChannelChatInput } from "@/components/chat-input"
+import { ChatInput } from "@/components/chat-input"
 
 interface ChannelPageProps {
   channel: Channel
@@ -18,6 +18,8 @@ export function ChannelPage({
   messages: initialMessages,
 }: ChannelPageProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
 
@@ -200,20 +202,30 @@ export function ChannelPage({
   }, [messages])
 
   async function handleSubmit(content: string) {
-    const response = await fetch("/api/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        content,
-        channelId: channel.id,
-      }),
-    })
+    setIsLoading(true)
+    setError(null)
 
-    const data = await response.json()
-    if (!response.ok) {
-      throw new Error(data.error || "Failed to send message")
+    try {
+      const response = await fetch("/api/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          content,
+          channelId: channel.id,
+        }),
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to send message")
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to send message")
+      throw err
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -319,7 +331,21 @@ export function ChannelPage({
 
       {/* Message Input */}
       <div className="flex h-[60px] min-h-[60px] items-center border-t px-4">
-        <ChannelChatInput channelName={channel.name} onSubmit={handleSubmit} />
+        <form
+          className="w-full"
+          onSubmit={(e) => {
+            e.preventDefault()
+          }}
+        >
+          <ChatInput
+            placeholder={`Message #${channel.name}`}
+            onSubmit={handleSubmit}
+            isLoading={isLoading}
+            error={error}
+            showError={true}
+            autoFocus={true}
+          />
+        </form>
       </div>
     </div>
   )
