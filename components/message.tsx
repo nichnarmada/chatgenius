@@ -43,12 +43,6 @@ export function Message({
   showThread = true,
   isInThreadModal = false,
 }: MessageProps) {
-  console.log("Message props received:", {
-    messageId: message.id,
-    content: message.content,
-    files: message.files,
-  })
-
   const [isEditing, setIsEditing] = useState(false)
   const [isThreadOpen, setIsThreadOpen] = useState(false)
   const [isReactionOpen, setIsReactionOpen] = useState<boolean>(false)
