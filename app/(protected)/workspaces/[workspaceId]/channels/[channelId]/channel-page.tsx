@@ -1,6 +1,5 @@
 "use client"
 
-import { Hash } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { createClient } from "@/utils/supabase/client"
 import { Message as MessageComponent } from "@/components/message"

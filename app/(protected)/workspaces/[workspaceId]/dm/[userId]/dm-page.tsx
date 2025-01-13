@@ -7,7 +7,6 @@ import { DirectMessage } from "@/types/message"
 import { Profile } from "@/types/profile"
 import { Workspace } from "@/types/workspace"
 import { ChatInput } from "@/components/chat-input"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 interface DMPageProps {
   otherUser: Profile

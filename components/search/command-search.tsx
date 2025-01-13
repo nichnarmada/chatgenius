@@ -109,13 +109,15 @@ export function CommandSearch({ open, onOpenChange }: CommandSearchProps) {
         )
         break
       case "direct_message":
-        const otherUserId =
-          result.sender_id === params.userId
-            ? result.receiver_id
-            : result.sender_id
-        router.push(
-          `/workspaces/${params.workspaceId}/dm/${otherUserId}#message-${result.id}`
-        )
+        {
+          const otherUserId =
+            result.sender_id === params.userId
+              ? result.receiver_id
+              : result.sender_id
+          router.push(
+            `/workspaces/${params.workspaceId}/dm/${otherUserId}#message-${result.id}`
+          )
+        }
         break
     }
   }
