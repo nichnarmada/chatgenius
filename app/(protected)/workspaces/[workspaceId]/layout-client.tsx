@@ -45,6 +45,7 @@ import { Workspace, Channel } from "@/types/workspace"
 import { Profile } from "@/types/profile"
 import { User, RealtimePostgresChangesPayload } from "@supabase/supabase-js"
 import { WorkspaceHeader } from "@/components/header/workspace-header"
+import { CommandSearch } from "@/components/search/command-search"
 
 interface WorkspaceLayoutClientProps {
   children: React.ReactNode
@@ -113,6 +114,7 @@ export function WorkspaceLayoutClient({
   const supabase = createClient()
   const { toast } = useToast()
   const params = useParams()
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
 
   // Get current channel or user from URL params
   const currentChannel = channels.find((c) => c.id === params.channelId)
@@ -681,10 +683,14 @@ export function WorkspaceLayoutClient({
             type={params.channelId ? "channel" : "dm"}
             channel={currentChannel}
             otherUser={currentUser}
+            onSearchClick={() => setIsSearchOpen(true)}
           />
           {children}
         </div>
       </main>
+
+      {/* Global Search */}
+      <CommandSearch open={isSearchOpen} onOpenChange={setIsSearchOpen} />
 
       {/* Modals */}
       <SignOutModal
