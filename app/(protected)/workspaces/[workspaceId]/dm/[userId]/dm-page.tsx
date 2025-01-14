@@ -174,6 +174,8 @@ export function DMPage({
     setError(null)
 
     try {
+      let messageId: string | undefined
+
       if (files && files.length > 0) {
         // Handle file upload
         const formData = new FormData()
@@ -191,6 +193,7 @@ export function DMPage({
         if (!response.ok) {
           throw new Error(data.error || "Failed to upload file")
         }
+        messageId = data.messageId
       } else {
         // Handle text-only message
         const response = await fetch("/api/direct-messages", {
@@ -208,6 +211,27 @@ export function DMPage({
         const data = await response.json()
         if (!response.ok) {
           throw new Error(data.error || "Failed to send message")
+        }
+        messageId = data.id
+      }
+
+      // Generate embedding for the message
+      if (messageId) {
+        try {
+          await fetch("/api/avatars/embed", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              messageId,
+              messageType: "direct_message",
+              workspaceId: workspace.id,
+            }),
+          })
+        } catch (error) {
+          console.error("Failed to generate embedding:", error)
+          // Don't throw here as the message was still sent successfully
         }
       }
     } catch (err) {

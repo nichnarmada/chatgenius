@@ -117,6 +117,13 @@ export function WorkspaceLayoutClient({
   const { toast } = useToast()
   const params = useParams()
   const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [avatarConfigs, setAvatarConfigs] = useState<
+    Array<{
+      id: string
+      name: string
+      active: boolean
+    }>
+  >([])
 
   // Get current channel or user from URL params
   const currentChannel = channels.find((c) => c.id === params.channelId)
@@ -343,6 +350,44 @@ export function WorkspaceLayoutClient({
 
     return () => {
       supabase.removeChannel(channelsChannel)
+    }
+  }, [workspace.id, supabase])
+
+  useEffect(() => {
+    const fetchAvatarConfigs = async () => {
+      const { data: configs } = await supabase
+        .from("avatar_configs")
+        .select("id, name, active")
+        .eq("workspace_id", workspace.id)
+        .eq("active", true)
+
+      if (configs) {
+        setAvatarConfigs(configs)
+      }
+    }
+
+    fetchAvatarConfigs()
+
+    // Subscribe to changes
+    const avatarChannel = supabase
+      .channel("avatar_configs_changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "avatar_configs",
+          filter: `workspace_id=eq.${workspace.id}`,
+        },
+        () => {
+          // Refetch on any changes
+          fetchAvatarConfigs()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(avatarChannel)
     }
   }, [workspace.id, supabase])
 
@@ -583,6 +628,52 @@ export function WorkspaceLayoutClient({
                       </Link>
                     </Button>
                   ))}
+              </div>
+            </ScrollArea>
+          </div>
+
+          <div>
+            <h2 className="mb-2 text-sm font-semibold text-muted-foreground">
+              AI AVATARS
+            </h2>
+            <ScrollArea className="h-[100px]">
+              <div className="space-y-1">
+                {avatarConfigs.map((config) => (
+                  <Button
+                    key={config.id}
+                    variant="ghost"
+                    className="w-full justify-start hover:bg-muted-foreground/10"
+                    asChild
+                  >
+                    <Link
+                      href={`/workspaces/${workspace.id}/avatar-chat/${config.id}`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="relative">
+                          <Avatar className="h-5 w-5">
+                            <AvatarFallback>
+                              {config.name.slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="absolute -bottom-0.5 -right-0.5">
+                            <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                          </div>
+                        </div>
+                        <span className="truncate">{config.name}</span>
+                      </div>
+                    </Link>
+                  </Button>
+                ))}
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start"
+                  asChild
+                >
+                  <Link href={`/workspaces/${workspace.id}/settings/avatar`}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Avatar
+                  </Link>
+                </Button>
               </div>
             </ScrollArea>
           </div>

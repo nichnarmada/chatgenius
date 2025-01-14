@@ -1,4 +1,4 @@
-import { AvatarConfigForm } from "@/components/avatar/avatar-config-form"
+import { AvatarConfigForm } from "@/components/ai/avatar-config-form"
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"

@@ -50,7 +50,7 @@ const formSchema = z.object({
   system_prompt: z.string().min(1, "System prompt is required"),
   temperature: z.number().min(0).max(2),
   context_length: z.number().min(1).max(20),
-  is_active: z.boolean().default(false),
+  active: z.boolean().default(false),
   social_media: socialMediaSchema,
 })
 
@@ -58,7 +58,19 @@ type FormValues = z.infer<typeof formSchema>
 
 interface AvatarConfigFormProps {
   workspaceId: string
-  initialData?: FormValues & { id: string }
+  initialData?: {
+    id: string
+    name: string
+    system_prompt: string
+    temperature: number
+    context_length: number
+    active: boolean
+    social_media: {
+      twitter: { enabled: boolean; username?: string }
+      linkedin: { enabled: boolean; url?: string }
+      github: { enabled: boolean; username?: string }
+    }
+  }
 }
 
 export function AvatarConfigForm({
@@ -75,7 +87,7 @@ export function AvatarConfigForm({
       system_prompt: initialData?.system_prompt ?? "",
       temperature: initialData?.temperature ?? 0.7,
       context_length: initialData?.context_length ?? 10,
-      is_active: initialData?.is_active ?? false,
+      active: initialData?.active ?? false,
       social_media: initialData?.social_media ?? {
         twitter: { enabled: false, username: "" },
         linkedin: { enabled: false, url: "" },
@@ -90,15 +102,15 @@ export function AvatarConfigForm({
       const { error } = await supabase.from("avatar_configs").upsert({
         id: initialData?.id,
         workspace_id: workspaceId,
+        user_id: (await supabase.auth.getUser()).data.user?.id,
         ...data,
       })
 
-      if (error) throw error
-
       toast.success("Avatar settings saved!")
     } catch (error) {
-      console.error("Error saving avatar config:", error)
-      toast.error("Failed to save avatar settings")
+      toast.error(
+        `Failed to save avatar settings: ${error instanceof Error ? error.message : "Unknown error"}`
+      )
     } finally {
       setIsLoading(false)
     }
@@ -113,14 +125,14 @@ export function AvatarConfigForm({
               <div>
                 <CardTitle
                   className={
-                    !form.watch("is_active") ? "text-muted-foreground/50" : ""
+                    !form.watch("active") ? "text-muted-foreground/50" : ""
                   }
                 >
                   Basic Configuration
                 </CardTitle>
                 <CardDescription
                   className={
-                    !form.watch("is_active") ? "text-muted-foreground/40" : ""
+                    !form.watch("active") ? "text-muted-foreground/40" : ""
                   }
                 >
                   Configure your avatar&apos;s basic settings and personality.
@@ -128,7 +140,7 @@ export function AvatarConfigForm({
               </div>
               <FormField
                 control={form.control}
-                name="is_active"
+                name="active"
                 render={({ field }) => (
                   <FormItem className="space-y-0">
                     <FormControl>
@@ -141,7 +153,7 @@ export function AvatarConfigForm({
                 )}
               />
             </CardHeader>
-            {form.watch("is_active") && (
+            {form.watch("active") && (
               <CardContent className="space-y-6">
                 <FormField
                   control={form.control}
@@ -233,7 +245,7 @@ export function AvatarConfigForm({
             )}
           </Card>
 
-          {form.watch("is_active") && (
+          {form.watch("active") && (
             <Card>
               <CardHeader>
                 <CardTitle>Social Media Integration</CardTitle>
@@ -373,7 +385,7 @@ export function AvatarConfigForm({
           )}
         </div>
 
-        {form.watch("is_active") && (
+        {form.watch("active") && (
           <div className="flex justify-end">
             <Button type="submit" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

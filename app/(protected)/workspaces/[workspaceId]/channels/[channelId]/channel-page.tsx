@@ -6,6 +6,7 @@ import { Message as MessageComponent } from "@/components/message"
 import { Message } from "@/types/message"
 import { Channel } from "@/types/workspace"
 import { ChatInput } from "@/components/chat-input"
+import { useParams } from "next/navigation"
 
 interface ChannelPageProps {
   channel: Channel
@@ -21,6 +22,7 @@ export function ChannelPage({
   const [error, setError] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
+  const params = useParams()
 
   useEffect(() => {
     const messageChannel = supabase
@@ -186,6 +188,8 @@ export function ChannelPage({
     setError(null)
 
     try {
+      let messageId: string | undefined
+
       if (files && files.length > 0) {
         // Handle file upload
         const formData = new FormData()
@@ -202,6 +206,7 @@ export function ChannelPage({
         if (!response.ok) {
           throw new Error(data.error || "Failed to upload file")
         }
+        messageId = data.messageId
       } else {
         // Handle text-only message
         const response = await fetch("/api/messages", {
@@ -218,6 +223,27 @@ export function ChannelPage({
         const data = await response.json()
         if (!response.ok) {
           throw new Error(data.error || "Failed to send message")
+        }
+        messageId = data.id
+      }
+
+      // Generate embedding for the message
+      if (messageId) {
+        try {
+          await fetch("/api/avatars/embed", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              messageId,
+              messageType: "channel_message",
+              workspaceId: params.workspaceId,
+            }),
+          })
+        } catch (error) {
+          console.error("Failed to generate embedding:", error)
+          // Don't throw here as the message was still sent successfully
         }
       }
     } catch (err) {
