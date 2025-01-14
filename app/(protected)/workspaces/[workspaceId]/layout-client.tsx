@@ -586,7 +586,7 @@ export function WorkspaceLayoutClient({
             </div>
           </div>
 
-          <div>
+          <div className="mb-8">
             <h2 className="mb-2 text-sm font-semibold text-muted-foreground">
               DIRECT MESSAGES
             </h2>
@@ -784,9 +784,16 @@ export function WorkspaceLayoutClient({
       <main className="flex flex-1 flex-col overflow-hidden">
         <div className="flex h-full flex-1 flex-col">
           <WorkspaceHeader
-            type={params.channelId ? "channel" : "dm"}
+            type={
+              params.channelId ? "channel" : params.avatarId ? "avatar" : "dm"
+            }
             channel={currentChannel}
             otherUser={currentUser}
+            avatarConfig={
+              params.avatarId
+                ? avatarConfigs.find((config) => config.id === params.avatarId)
+                : undefined
+            }
             onSearchClick={() => setIsSearchOpen(true)}
           />
           {children}

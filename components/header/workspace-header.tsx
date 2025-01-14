@@ -7,9 +7,13 @@ import { Profile } from "@/types/profile"
 import { Button } from "@/components/ui/button"
 
 interface WorkspaceHeaderProps {
-  type: "channel" | "dm"
+  type: "channel" | "dm" | "avatar"
   channel?: Channel
   otherUser?: Profile
+  avatarConfig?: {
+    id: string
+    name: string
+  }
   onSearchClick?: () => void
 }
 
@@ -17,6 +21,7 @@ export function WorkspaceHeader({
   type,
   channel,
   otherUser,
+  avatarConfig,
   onSearchClick,
 }: WorkspaceHeaderProps) {
   const baseHeaderClasses =
@@ -60,6 +65,21 @@ export function WorkspaceHeader({
         <h2 className="text-lg font-semibold">
           {otherUser.display_name || otherUser.email}
         </h2>
+        {renderSearchButton()}
+      </div>
+    )
+  }
+
+  if (type === "avatar" && avatarConfig) {
+    return (
+      <div className={baseHeaderClasses}>
+        <Avatar className="mr-2 h-8 w-8">
+          <AvatarFallback>{avatarConfig.name[0]}</AvatarFallback>
+        </Avatar>
+        <div className="flex flex-col">
+          <h2 className="text-lg font-semibold">{avatarConfig.name}</h2>
+          <p className="text-xs text-muted-foreground">AI Avatar</p>
+        </div>
         {renderSearchButton()}
       </div>
     )
