@@ -13,6 +13,8 @@ import {
   Settings,
   ArrowLeftRight,
   DoorOpen,
+  UserRoundPen,
+  BotMessageSquare,
 } from "lucide-react"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -657,9 +659,20 @@ export function WorkspaceLayoutClient({
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={() => setShowProfileModal(true)}>
                 <div className="flex w-full items-center">
-                  <Settings className="mr-2 h-4 w-4" />
+                  <UserRoundPen className="mr-2 h-4 w-4" />
                   Profile Settings
                 </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link
+                  href={`/workspaces/${params.workspaceId}/settings/avatar`}
+                  className="cursor-pointer"
+                >
+                  <div className="flex w-full items-center">
+                    <BotMessageSquare className="mr-2 h-4 w-4" />
+                    Avatar Settings
+                  </div>
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <ThemeToggle />
