@@ -30,28 +30,12 @@ import { Slider } from "@/components/ui/slider"
 import { createClient } from "@/utils/supabase/client"
 import { toast } from "sonner"
 
-const socialMediaSchema = z.object({
-  twitter: z.object({
-    enabled: z.boolean().default(false),
-    username: z.string().optional(),
-  }),
-  linkedin: z.object({
-    enabled: z.boolean().default(false),
-    url: z.string().optional(),
-  }),
-  github: z.object({
-    enabled: z.boolean().default(false),
-    username: z.string().optional(),
-  }),
-})
-
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
   system_prompt: z.string().min(1, "System prompt is required"),
   temperature: z.number().min(0).max(2),
   context_length: z.number().min(1).max(20),
   active: z.boolean().default(false),
-  social_media: socialMediaSchema,
 })
 
 type FormValues = z.infer<typeof formSchema>
@@ -65,11 +49,6 @@ interface AvatarConfigFormProps {
     temperature: number
     context_length: number
     active: boolean
-    social_media: {
-      twitter: { enabled: boolean; username?: string }
-      linkedin: { enabled: boolean; url?: string }
-      github: { enabled: boolean; username?: string }
-    }
   }
 }
 
@@ -88,11 +67,6 @@ export function AvatarConfigForm({
       temperature: initialData?.temperature ?? 0.7,
       context_length: initialData?.context_length ?? 10,
       active: initialData?.active ?? false,
-      social_media: initialData?.social_media ?? {
-        twitter: { enabled: false, username: "" },
-        linkedin: { enabled: false, url: "" },
-        github: { enabled: false, username: "" },
-      },
     },
   })
 
@@ -244,145 +218,6 @@ export function AvatarConfigForm({
               </CardContent>
             )}
           </Card>
-
-          {form.watch("active") && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Social Media Integration</CardTitle>
-                <CardDescription>
-                  Link your social media profiles to enhance your avatar&apos;s
-                  personality.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="social_media.twitter.enabled"
-                  render={({ field }) => (
-                    <FormItem className="space-y-4 rounded-lg border p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">Twitter</FormLabel>
-                          <FormDescription>
-                            Enable Twitter integration
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </div>
-                      {field.value && (
-                        <FormField
-                          control={form.control}
-                          name="social_media.twitter.username"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Username</FormLabel>
-                              <FormControl>
-                                <Input placeholder="@username" {...field} />
-                              </FormControl>
-                              <FormDescription>
-                                Your Twitter username
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      )}
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="social_media.linkedin.enabled"
-                  render={({ field }) => (
-                    <FormItem className="space-y-4 rounded-lg border p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">LinkedIn</FormLabel>
-                          <FormDescription>
-                            Enable LinkedIn integration
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </div>
-                      {field.value && (
-                        <FormField
-                          control={form.control}
-                          name="social_media.linkedin.url"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Profile URL</FormLabel>
-                              <FormControl>
-                                <Input
-                                  placeholder="https://linkedin.com/in/..."
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormDescription>
-                                Your LinkedIn profile URL
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      )}
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="social_media.github.enabled"
-                  render={({ field }) => (
-                    <FormItem className="space-y-4 rounded-lg border p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">GitHub</FormLabel>
-                          <FormDescription>
-                            Enable GitHub integration
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </div>
-                      {field.value && (
-                        <FormField
-                          control={form.control}
-                          name="social_media.github.username"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Username</FormLabel>
-                              <FormControl>
-                                <Input placeholder="username" {...field} />
-                              </FormControl>
-                              <FormDescription>
-                                Your GitHub username
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      )}
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
-          )}
         </div>
 
         {form.watch("active") && (
@@ -398,10 +233,10 @@ export function AvatarConfigForm({
   )
 }
 
-const defaultSystemPrompt = `You are an AI avatar that represents me in conversations. Your responses should reflect my personality, communication style, and knowledge based on my message history and social media presence. You should:
+const defaultSystemPrompt = `You are an AI avatar that represents me in conversations. Your responses should reflect my personality, communication style, and knowledge based on my message history. You should:
 
 1. Maintain consistency with my typical communication style
-2. Use context from my previous messages and social media activity
+2. Use context from my previous messages
 3. Be helpful and professional while staying true to my personality
 4. Acknowledge when you're unsure about something
 5. Keep responses concise and to the point
