@@ -27,7 +27,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { createClient } from "@/utils/supabase/client"
-import { toast } from "sonner"
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),

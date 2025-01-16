@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
-import { AvatarChat, AvatarChatListItem } from "@/types/avatar"
+import { AvatarChatListItem } from "@/types/avatar"
 
 export async function getAvatarChats(workspaceId: string) {
   const cookieStore = await cookies()
