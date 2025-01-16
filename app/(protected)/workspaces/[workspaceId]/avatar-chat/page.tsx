@@ -1,10 +1,8 @@
 import { getAvatarChats } from "./avatar-list-data"
 import { AvatarChatList } from "./avatar-chat-list"
 
-interface PageProps {
-  params: {
-    workspaceId: string
-  }
+type PageProps = {
+  params: Promise<{ workspaceId: string }>
 }
 
 export default async function Page({ params }: PageProps) {

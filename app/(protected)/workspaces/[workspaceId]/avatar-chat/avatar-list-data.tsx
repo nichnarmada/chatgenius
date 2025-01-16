@@ -74,7 +74,7 @@ export async function getAvatarChats(workspaceId: string) {
       name: chat.title,
       last_message_at: chat.messages?.[0]?.created_at || chat.updated_at,
       preview: chat.messages?.[0]
-        ? `${chat.messages[0].role === "user" ? "You" : chat.config?.name}: ${chat.messages[0].content}`
+        ? `${chat.messages[0].role === "user" ? "You" : chat.config[0]?.name}: ${chat.messages[0].content}`
         : "No messages yet",
     })
   )
