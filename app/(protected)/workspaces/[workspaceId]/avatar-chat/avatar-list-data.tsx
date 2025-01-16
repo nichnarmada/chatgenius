@@ -1,9 +1,9 @@
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
-import { AvatarChat, AvatarConfig } from "@/types/avatar"
+import { AvatarChat, AvatarChatListItem } from "@/types/avatar"
 
-export async function getAvatarData(workspaceId: string, chatId: string) {
+export async function getAvatarChats(workspaceId: string) {
   const cookieStore = await cookies()
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -34,8 +34,8 @@ export async function getAvatarData(workspaceId: string, chatId: string) {
     redirect("/login")
   }
 
-  // Fetch chat with its config and messages
-  const { data: chatData, error: chatError } = await supabase
+  // Fetch avatar chats with their configs and latest messages
+  const { data: chats, error: chatsError } = await supabase
     .from("avatar_chats")
     .select(
       `
@@ -48,44 +48,34 @@ export async function getAvatarData(workspaceId: string, chatId: string) {
       config:avatar_configs!inner (
         id,
         name,
-        system_prompt,
         source_type,
-        source_id,
-        created_by_user_id,
-        workspace_id,
-        created_at,
-        updated_at
+        source_id
       ),
       messages:avatar_chat_messages (
-        id,
-        chat_id,
         role,
         content,
         created_at
       )
     `
     )
-    .eq("id", chatId)
-    .single()
+    .eq("created_by_user_id", user.id)
+    .order("updated_at", { ascending: false })
+    .limit(1, { foreignTable: "messages" })
 
-  if (chatError) {
-    console.error("Error fetching chat:", chatError)
-    redirect(`/workspaces/${workspaceId}/avatar-chat`)
+  if (chatsError) {
+    console.error("Error fetching chats:", chatsError)
+    return []
   }
 
-  if (!chatData || !chatData.config) {
-    redirect(`/workspaces/${workspaceId}/avatar-chat`)
-  }
-
-  const config = chatData.config as unknown as AvatarConfig
-  if (config.workspace_id !== workspaceId) {
-    redirect(`/workspaces/${workspaceId}/avatar-chat`)
-  }
-
-  const chat: AvatarChat = {
-    ...chatData,
-    config,
-  }
-
-  return chat
+  // Format the data for the UI
+  return (chats || []).map(
+    (chat): AvatarChatListItem => ({
+      id: chat.id,
+      name: chat.title,
+      last_message_at: chat.messages?.[0]?.created_at || chat.updated_at,
+      preview: chat.messages?.[0]
+        ? `${chat.messages[0].role === "user" ? "You" : chat.config?.name}: ${chat.messages[0].content}`
+        : "No messages yet",
+    })
+  )
 }

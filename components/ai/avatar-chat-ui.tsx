@@ -16,13 +16,21 @@ interface AvatarChatUIProps {
     id: string
     name: string
     system_prompt: string
-    temperature: number
-    context_length: number
+    temperature?: number
+    context_length?: number
   }
   message: Message
 }
 
-export function AvatarChatUI({ avatarConfig, message }: AvatarChatUIProps) {
+export function AvatarChatUI({
+  avatarConfig: {
+    name,
+    temperature = 0.7, // Default temperature
+    context_length = 4096, // Default context length
+    ...config
+  },
+  message,
+}: AvatarChatUIProps) {
   return (
     <>
       <div key={message.id} className="space-y-4">
@@ -47,14 +55,12 @@ export function AvatarChatUI({ avatarConfig, message }: AvatarChatUIProps) {
         {/* Avatar Response */}
         <div className="group relative flex gap-3 px-4 py-2 hover:bg-muted/50">
           <Avatar className="h-8 w-8">
-            <AvatarImage
-              src={`/avatars/${avatarConfig.name.toLowerCase()}.png`}
-            />
-            <AvatarFallback>{avatarConfig.name[0]}</AvatarFallback>
+            <AvatarImage src={`/avatars/${name.toLowerCase()}.png`} />
+            <AvatarFallback>{name[0]}</AvatarFallback>
           </Avatar>
           <div className="flex-1 space-y-1">
             <div className="flex items-center gap-2">
-              <span className="font-semibold">{avatarConfig.name}</span>
+              <span className="font-semibold">{name}</span>
               <span className="text-xs text-muted-foreground">
                 {formatDistanceToNow(new Date(message.created_at), {
                   addSuffix: true,

@@ -15,6 +15,7 @@ import {
   DoorOpen,
   UserRoundPen,
   BotMessageSquare,
+  MessageSquare,
 } from "lucide-react"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -48,6 +49,7 @@ import { Profile } from "@/types/profile"
 import { User, RealtimePostgresChangesPayload } from "@supabase/supabase-js"
 import { WorkspaceHeader } from "@/components/header/workspace-header"
 import { CommandSearch } from "@/components/search/command-search"
+import { AvatarConfig } from "@/types/avatar"
 
 interface WorkspaceLayoutClientProps {
   children: React.ReactNode
@@ -117,11 +119,15 @@ export function WorkspaceLayoutClient({
   const { toast } = useToast()
   const params = useParams()
   const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const [avatarConfigs, setAvatarConfigs] = useState<
+  const [avatarConfigs, setAvatarConfigs] = useState<AvatarConfig[]>([])
+  const [avatarChats, setAvatarChats] = useState<
     Array<{
       id: string
-      name: string
-      active: boolean
+      title: string
+      config: {
+        id: string
+        name: string
+      }
     }>
   >([])
 
@@ -357,7 +363,20 @@ export function WorkspaceLayoutClient({
     const fetchAvatarConfigs = async () => {
       const { data: configs } = await supabase
         .from("avatar_configs")
-        .select("id, name, active")
+        .select(
+          `
+          id,
+          name,
+          active,
+          system_prompt,
+          source_type,
+          source_id,
+          created_by_user_id,
+          workspace_id,
+          created_at,
+          updated_at
+        `
+        )
         .eq("workspace_id", workspace.id)
         .eq("active", true)
 
@@ -390,6 +409,72 @@ export function WorkspaceLayoutClient({
       supabase.removeChannel(avatarChannel)
     }
   }, [workspace.id, supabase])
+
+  useEffect(() => {
+    const fetchAvatarChats = async () => {
+      const { data: chats } = await supabase
+        .from("avatar_chats")
+        .select(
+          `
+          id,
+          title,
+          config:avatar_configs!inner (
+            id,
+            name
+          )
+        `
+        )
+        .eq("created_by_user_id", user.id)
+        .order("created_at", { ascending: false })
+
+      if (chats) {
+        type ChatResponse = {
+          id: string
+          title: string
+          config: {
+            id: string
+            name: string
+          }
+        }
+
+        // Cast the response to the correct type
+        const typedChats = (chats as any[]).map((chat) => ({
+          id: chat.id as string,
+          title: chat.title as string,
+          config: {
+            id: chat.config[0].id as string,
+            name: chat.config[0].name as string,
+          },
+        })) satisfies ChatResponse[]
+
+        setAvatarChats(typedChats)
+      }
+    }
+
+    fetchAvatarChats()
+
+    // Subscribe to changes
+    const chatChannel = supabase
+      .channel("avatar_chats_changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "avatar_chats",
+          filter: `created_by_user_id=eq.${user.id}`,
+        },
+        () => {
+          // Refetch on any changes
+          fetchAvatarChats()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(chatChannel)
+    }
+  }, [workspace.id, user.id, supabase])
 
   // Check if user is owner
   const isOwner = workspace.workspace_members?.some(
@@ -638,42 +723,42 @@ export function WorkspaceLayoutClient({
             </h2>
             <ScrollArea className="h-[100px]">
               <div className="space-y-1">
-                {avatarConfigs.map((config) => (
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start hover:bg-muted-foreground/10"
+                  asChild
+                >
+                  <Link href={`/workspaces/${params.workspaceId}/avatar-chat`}>
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    AI Chat
+                  </Link>
+                </Button>
+                {avatarChats.map((chat) => (
                   <Button
-                    key={config.id}
+                    key={chat.id}
                     variant="ghost"
-                    className="w-full justify-start hover:bg-muted-foreground/10"
+                    className="w-full justify-start pl-8 hover:bg-muted-foreground/10"
                     asChild
                   >
                     <Link
-                      href={`/workspaces/${workspace.id}/avatar-chat/${config.id}`}
+                      href={`/workspaces/${params.workspaceId}/avatar-chat/${chat.id}`}
                     >
                       <div className="flex items-center gap-2">
                         <div className="relative">
                           <Avatar className="h-5 w-5">
                             <AvatarFallback>
-                              {config.name.slice(0, 2).toUpperCase()}
+                              {chat.config.name.slice(0, 2).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           <div className="absolute -bottom-0.5 -right-0.5">
                             <div className="h-2 w-2 rounded-full bg-emerald-500" />
                           </div>
                         </div>
-                        <span className="truncate">{config.name}</span>
+                        <span className="truncate">{chat.title}</span>
                       </div>
                     </Link>
                   </Button>
                 ))}
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start"
-                  asChild
-                >
-                  <Link href={`/workspaces/${workspace.id}/settings/avatar`}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Avatar
-                  </Link>
-                </Button>
               </div>
             </ScrollArea>
           </div>
@@ -791,7 +876,8 @@ export function WorkspaceLayoutClient({
             otherUser={currentUser}
             avatarConfig={
               params.avatarId
-                ? avatarConfigs.find((config) => config.id === params.avatarId)
+                ? avatarChats.find((chat) => chat.id === params.avatarId)
+                    ?.config
                 : undefined
             }
             onSearchClick={() => setIsSearchOpen(true)}

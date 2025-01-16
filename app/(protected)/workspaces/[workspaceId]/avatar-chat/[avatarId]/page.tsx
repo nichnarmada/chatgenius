@@ -8,12 +8,26 @@ type PageProps = {
 export default async function Page({ params }: PageProps) {
   const { workspaceId, avatarId } = await params
 
-  const { avatarConfig, messages } = await getAvatarData(workspaceId, avatarId)
+  const chat = await getAvatarData(workspaceId, avatarId)
+
+  // Ensure chat.config exists (getAvatarData already checks this and redirects if not)
+  if (!chat.config) {
+    throw new Error("Avatar config not found")
+  }
+
+  // Transform messages to match the expected format
+  const messages =
+    chat.messages?.map((msg) => ({
+      id: msg.id,
+      query: msg.role === "user" ? msg.content : "",
+      response: msg.role === "assistant" ? msg.content : "",
+      created_at: msg.created_at,
+    })) || []
 
   return (
     <AvatarPage
       workspaceId={workspaceId}
-      avatarConfig={avatarConfig}
+      avatarConfig={chat.config}
       messages={messages}
     />
   )

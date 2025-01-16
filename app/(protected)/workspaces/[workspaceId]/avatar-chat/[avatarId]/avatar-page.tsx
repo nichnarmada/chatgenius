@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 import { AvatarChatUI } from "@/components/ai/avatar-chat-ui"
 import { ChatInput } from "@/components/chat-input"
+import { AvatarConfig } from "@/types/avatar"
 
 interface Message {
   id: string
@@ -11,14 +12,6 @@ interface Message {
   response: string
   created_at: string
   isLoading?: boolean
-}
-
-interface AvatarConfig {
-  id: string
-  name: string
-  system_prompt: string
-  temperature: number
-  context_length: number
 }
 
 interface AvatarPageProps {

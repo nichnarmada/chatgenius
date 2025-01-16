@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { Loader2 } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -19,26 +20,28 @@ import {
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Switch } from "@/components/ui/switch"
-import { Slider } from "@/components/ui/slider"
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { createClient } from "@/utils/supabase/client"
 import { toast } from "sonner"
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
   system_prompt: z.string().min(1, "System prompt is required"),
-  temperature: z.number().min(0).max(2),
-  context_length: z.number().min(1).max(20),
-  active: z.boolean().default(false),
+  source_type: z.enum(["channel", "user"]),
+  source_id: z.string().min(1, "Source is required"),
 })
 
 type FormValues = z.infer<typeof formSchema>
+
+interface Source {
+  id: string
+  name: string
+}
 
 interface AvatarConfigFormProps {
   workspaceId: string
@@ -46,199 +49,283 @@ interface AvatarConfigFormProps {
     id: string
     name: string
     system_prompt: string
-    temperature: number
-    context_length: number
-    active: boolean
+    source_type: "channel" | "user"
+    source_id: string
   }
+  onSuccess?: (configId: string) => void
 }
+
+const defaultSystemPrompt = `You are an AI assistant that helps users by providing informative and helpful responses based on the context of the conversation and any relevant documents or messages. Your responses should be:
+
+1. Accurate and based on the available context
+2. Clear and well-structured
+3. Helpful and solution-oriented
+4. Professional yet conversational in tone
+
+When referencing information, clearly indicate whether it comes from chat messages, documents, or other sources.`
 
 export function AvatarConfigForm({
   workspaceId,
   initialData,
+  onSuccess,
 }: AvatarConfigFormProps) {
   const [isLoading, setIsLoading] = useState(false)
+  const [channels, setChannels] = useState<Source[]>([])
+  const [users, setUsers] = useState<Source[]>([])
+  const router = useRouter()
   const supabase = createClient()
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: initialData?.name ?? "",
-      system_prompt: initialData?.system_prompt ?? "",
-      temperature: initialData?.temperature ?? 0.7,
-      context_length: initialData?.context_length ?? 10,
-      active: initialData?.active ?? false,
+      system_prompt: initialData?.system_prompt ?? defaultSystemPrompt,
+      source_type: initialData?.source_type ?? "channel",
+      source_id: initialData?.source_id ?? "",
     },
   })
 
+  // Fetch channels and users when the component mounts
+  useEffect(() => {
+    async function fetchSources() {
+      // Fetch channels
+      const { data: channelsData } = await supabase
+        .from("channels")
+        .select("id, name")
+        .eq("workspace_id", workspaceId)
+        .order("name")
+
+      if (channelsData) {
+        setChannels(
+          channelsData.map((channel) => ({
+            id: channel.id,
+            name: channel.name,
+          }))
+        )
+      }
+
+      // Fetch workspace members
+      const { data: membersData } = await supabase
+        .from("workspace_members")
+        .select("user_id")
+        .eq("workspace_id", workspaceId)
+
+      if (membersData) {
+        const memberIds = membersData.map((m) => m.user_id)
+        const { data: usersData } = await supabase
+          .from("profiles")
+          .select("id, display_name, email")
+          .in("id", memberIds)
+
+        if (usersData) {
+          setUsers(
+            usersData.map((user) => ({
+              id: user.id,
+              name: user.display_name || user.email,
+            }))
+          )
+        }
+      }
+    }
+
+    fetchSources()
+  }, [workspaceId, supabase])
+
   async function onSubmit(data: FormValues) {
+    console.log("Form submission started with data:", data)
     setIsLoading(true)
     try {
-      const { error } = await supabase.from("avatar_configs").upsert({
-        id: initialData?.id,
-        workspace_id: workspaceId,
-        user_id: (await supabase.auth.getUser()).data.user?.id,
-        ...data,
-      })
+      const { data: userData, error: userError } = await supabase.auth.getUser()
+      if (userError) {
+        console.error("Error fetching user:", userError)
+        throw userError
+      }
+      console.log("User data fetched:", userData)
 
-      toast.success("Avatar settings saved!")
+      // First, check if an avatar config already exists for this source
+      const { data: existingConfig, error: fetchError } = await supabase
+        .from("avatar_configs")
+        .select()
+        .eq("workspace_id", workspaceId)
+        .eq("source_type", data.source_type)
+        .eq("source_id", data.source_id)
+        .single()
+
+      if (fetchError && fetchError.code !== "PGRST116") {
+        // PGRST116 is "not found"
+        console.error("Error fetching existing config:", fetchError)
+        throw fetchError
+      }
+
+      // Get or create the avatar config
+      let avatarConfig
+      if (!existingConfig) {
+        // Create new config if none exists
+        const { data: newConfig, error: createError } = await supabase
+          .from("avatar_configs")
+          .insert({
+            name: data.name,
+            system_prompt: data.system_prompt,
+            source_type: data.source_type,
+            source_id: data.source_id,
+            created_by_user_id: userData.user.id,
+            workspace_id: workspaceId,
+            active: true,
+          })
+          .select()
+          .single()
+
+        if (createError) {
+          console.error("Error creating avatar config:", createError)
+          throw createError
+        }
+        avatarConfig = newConfig
+      } else {
+        avatarConfig = existingConfig
+      }
+
+      // Create a new chat instance using the avatar config
+      const { data: chat, error: chatError } = await supabase
+        .from("avatar_chats")
+        .insert({
+          config_id: avatarConfig.id,
+          created_by_user_id: userData.user.id,
+          title: data.name, // Use the provided name as the chat title
+        })
+        .select()
+        .single()
+
+      if (chatError) {
+        console.error("Error creating chat:", chatError)
+        throw chatError
+      }
+
+      console.log("Chat created successfully:", chat)
+
+      if (chat) {
+        if (onSuccess) {
+          console.log("Calling onSuccess with chat.id:", chat.id)
+          onSuccess(chat.id)
+        } else {
+          console.log("Redirecting to avatar chat page")
+          router.push(`/workspaces/${workspaceId}/avatar-chat/${chat.id}`)
+          router.refresh()
+        }
+      }
     } catch (error) {
-      toast.error(
-        `Failed to save avatar settings: ${error instanceof Error ? error.message : "Unknown error"}`
-      )
+      console.error("Error in onSubmit:", {
+        error,
+        formData: data,
+        workspaceId,
+        initialData,
+      })
     } finally {
       setIsLoading(false)
     }
   }
 
+  const sourceType = form.watch("source_type")
+  const sources = sourceType === "channel" ? channels : users
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-8">
-        <div className="space-y-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0">
-              <div>
-                <CardTitle
-                  className={
-                    !form.watch("active") ? "text-muted-foreground/50" : ""
-                  }
-                >
-                  Basic Configuration
-                </CardTitle>
-                <CardDescription
-                  className={
-                    !form.watch("active") ? "text-muted-foreground/40" : ""
-                  }
-                >
-                  Configure your avatar&apos;s basic settings and personality.
-                </CardDescription>
-              </div>
-              <FormField
-                control={form.control}
-                name="active"
-                render={({ field }) => (
-                  <FormItem className="space-y-0">
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </CardHeader>
-            {form.watch("active") && (
-              <CardContent className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Avatar Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="My AI Assistant" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        A name for your AI avatar.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Avatar Name</FormLabel>
+              <FormControl>
+                <Input placeholder="My AI Assistant" {...field} />
+              </FormControl>
+              <FormDescription>A name for your AI avatar.</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-                <FormField
-                  control={form.control}
-                  name="system_prompt"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>System Prompt</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="You are an AI avatar that represents me in conversations..."
-                          className="min-h-[240px]"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Define your avatar&apos;s personality and behavior.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+        <FormField
+          control={form.control}
+          name="source_type"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Source Type</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a source type" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="channel">Channel</SelectItem>
+                  <SelectItem value="user">User</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormDescription>
+                Choose whether this avatar represents a channel or a user.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-                <FormField
-                  control={form.control}
-                  name="temperature"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Temperature ({field.value})</FormLabel>
-                      <FormControl>
-                        <Slider
-                          min={0}
-                          max={2}
-                          step={0.1}
-                          value={[field.value]}
-                          onValueChange={(vals) => field.onChange(vals[0])}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Controls randomness in responses (0 = focused, 2 =
-                        creative)
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+        <FormField
+          control={form.control}
+          name="source_id"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Source</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder={`Select a ${sourceType}`} />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {sources.map((source) => (
+                    <SelectItem key={source.id} value={source.id}>
+                      {source.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormDescription>
+                Select the {sourceType} this avatar will represent.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-                <FormField
-                  control={form.control}
-                  name="context_length"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        Context Length ({field.value} messages)
-                      </FormLabel>
-                      <FormControl>
-                        <Slider
-                          min={1}
-                          max={20}
-                          step={1}
-                          value={[field.value]}
-                          onValueChange={(vals) => field.onChange(vals[0])}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Number of previous messages to include as context
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+        <FormField
+          control={form.control}
+          name="system_prompt"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>System Prompt</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="You are an AI avatar that represents me in conversations..."
+                  className="min-h-[240px]"
+                  {...field}
                 />
-              </CardContent>
-            )}
-          </Card>
+              </FormControl>
+              <FormDescription>
+                Define your avatar&apos;s personality and behavior.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="flex justify-end">
+          <Button type="submit" disabled={isLoading}>
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {initialData ? "Save Changes" : "Create Avatar"}
+          </Button>
         </div>
-
-        {form.watch("active") && (
-          <div className="flex justify-end">
-            <Button type="submit" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Changes
-            </Button>
-          </div>
-        )}
       </form>
     </Form>
   )
 }
-
-const defaultSystemPrompt = `You are an AI avatar that represents me in conversations. Your responses should reflect my personality, communication style, and knowledge based on my message history. You should:
-
-1. Maintain consistency with my typical communication style
-2. Use context from my previous messages
-3. Be helpful and professional while staying true to my personality
-4. Acknowledge when you're unsure about something
-5. Keep responses concise and to the point
-
-Remember that you're representing me, so maintain appropriate boundaries and professionalism.`
