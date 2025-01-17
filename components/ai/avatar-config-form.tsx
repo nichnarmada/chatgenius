@@ -27,12 +27,14 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { createClient } from "@/utils/supabase/client"
+import { Slider } from "@/components/ui/slider"
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
   system_prompt: z.string().min(1, "System prompt is required"),
   source_type: z.enum(["channel", "user"]),
   source_id: z.string().min(1, "Source is required"),
+  message_history_limit: z.number().min(10).max(40),
 })
 
 type FormValues = z.infer<typeof formSchema>
@@ -50,6 +52,7 @@ interface AvatarConfigFormProps {
     system_prompt: string
     source_type: "channel" | "user"
     source_id: string
+    message_history_limit: number
   }
   onSuccess?: (configId: string) => void
 }
@@ -81,6 +84,7 @@ export function AvatarConfigForm({
       system_prompt: initialData?.system_prompt ?? defaultSystemPrompt,
       source_type: initialData?.source_type ?? "channel",
       source_id: initialData?.source_id ?? "",
+      message_history_limit: initialData?.message_history_limit ?? 20,
     },
   })
 
@@ -169,7 +173,7 @@ export function AvatarConfigForm({
             source_id: data.source_id,
             created_by_user_id: userData.user.id,
             workspace_id: workspaceId,
-            active: true,
+            message_history_limit: data.message_history_limit,
           })
           .select()
           .single()
@@ -189,7 +193,10 @@ export function AvatarConfigForm({
         .insert({
           config_id: avatarConfig.id,
           created_by_user_id: userData.user.id,
-          title: data.name, // Use the provided name as the chat title
+          title: data.name,
+          source_type: data.source_type as "channel" | "user",
+          source_id: data.source_id,
+          workspace_id: workspaceId,
         })
         .select()
         .single()
@@ -202,6 +209,19 @@ export function AvatarConfigForm({
       console.log("Chat created successfully:", chat)
 
       if (chat) {
+        // Initialize embeddings for the new chat
+        const response = await fetch("/api/avatars/initialize", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ chatId: chat.id }),
+        })
+
+        if (!response.ok) {
+          console.error("Error initializing embeddings:", await response.json())
+        }
+
         if (onSuccess) {
           console.log("Calling onSuccess with chat.id:", chat.id)
           onSuccess(chat.id)
@@ -312,6 +332,35 @@ export function AvatarConfigForm({
               </FormControl>
               <FormDescription>
                 Define your avatar&apos;s personality and behavior.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="message_history_limit"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Message History Limit</FormLabel>
+              <FormControl>
+                <div className="flex flex-col space-y-4">
+                  <Slider
+                    min={10}
+                    max={40}
+                    step={5}
+                    value={[field.value]}
+                    onValueChange={(value) => field.onChange(value[0])}
+                  />
+                  <div className="text-center text-sm text-muted-foreground">
+                    {field.value} messages
+                  </div>
+                </div>
+              </FormControl>
+              <FormDescription>
+                Number of recent messages to use for avatar context (10-40
+                messages).
               </FormDescription>
               <FormMessage />
             </FormItem>

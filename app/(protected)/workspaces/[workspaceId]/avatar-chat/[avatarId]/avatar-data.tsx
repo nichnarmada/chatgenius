@@ -1,24 +1,9 @@
-import { createServerClient } from "@supabase/ssr"
-import { cookies } from "next/headers"
+import { createClient } from "@/utils/supabase/server"
 import { redirect } from "next/navigation"
 import { AvatarChat, AvatarConfig } from "@/types/avatar"
 
 export async function getAvatarData(workspaceId: string, chatId: string) {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll() {
-          // This is a read-only operation in a Server Component
-        },
-      },
-    }
-  )
+  const supabase = await createClient()
 
   const {
     data: { user },
@@ -43,6 +28,9 @@ export async function getAvatarData(workspaceId: string, chatId: string) {
       title,
       config_id,
       created_by_user_id,
+      workspace_id,
+      source_type,
+      source_id,
       created_at,
       updated_at,
       config:avatar_configs!inner (
@@ -54,13 +42,14 @@ export async function getAvatarData(workspaceId: string, chatId: string) {
         created_by_user_id,
         workspace_id,
         created_at,
-        updated_at
+        updated_at,
+        message_history_limit
       ),
       messages:avatar_chat_messages (
         id,
         chat_id,
-        role,
-        content,
+        query,
+        response,
         created_at
       )
     `

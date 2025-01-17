@@ -428,6 +428,7 @@ export function WorkspaceLayoutClient({
         .order("created_at", { ascending: false })
 
       if (chats) {
+        console.log("chats", chats)
         type ChatResponse = {
           id: string
           title: string
@@ -442,8 +443,8 @@ export function WorkspaceLayoutClient({
           id: chat.id as string,
           title: chat.title as string,
           config: {
-            id: chat.config[0].id as string,
-            name: chat.config[0].name as string,
+            id: chat.config.id as string,
+            name: chat.config.name as string,
           },
         })) satisfies ChatResponse[]
 

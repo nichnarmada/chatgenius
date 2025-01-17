@@ -7,6 +7,7 @@ import { DirectMessage } from "@/types/message"
 import { Profile } from "@/types/profile"
 import { Workspace } from "@/types/workspace"
 import { ChatInput } from "@/components/chat-input"
+import { toast } from "sonner"
 
 interface DMPageProps {
   otherUser: Profile
@@ -24,6 +25,7 @@ export function DMPage({
   const [error, setError] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
+  const [content, setContent] = useState("")
 
   useEffect(() => {
     const messageChannel = supabase
@@ -170,73 +172,61 @@ export function DMPage({
   }, [messages])
 
   async function handleSubmit(content: string, files?: File[]) {
+    if (!content.trim() && (!files || files.length === 0)) return
+
     setIsLoading(true)
-    setError(null)
-
     try {
-      let messageId: string | undefined
-
+      // First, upload any files if present
+      const uploadedFiles = []
       if (files && files.length > 0) {
-        // Handle file upload
-        const formData = new FormData()
-        formData.append("content", content)
-        formData.append("workspaceId", workspace.id)
-        formData.append("receiverId", otherUser.id)
-        files.forEach((file) => formData.append("file", file))
+        for (const file of files) {
+          const formData = new FormData()
+          formData.append("file", file)
+          formData.append("workspaceId", workspace.id)
+          formData.append("dmId", otherUser.id)
 
-        const response = await fetch("/api/files", {
-          method: "POST",
-          body: formData,
-        })
-
-        const data = await response.json()
-        if (!response.ok) {
-          throw new Error(data.error || "Failed to upload file")
-        }
-        messageId = data.messageId
-      } else {
-        // Handle text-only message
-        const response = await fetch("/api/direct-messages", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            content,
-            workspaceId: workspace.id,
-            receiverId: otherUser.id,
-          }),
-        })
-
-        const data = await response.json()
-        if (!response.ok) {
-          throw new Error(data.error || "Failed to send message")
-        }
-        messageId = data.id
-      }
-
-      // Generate embedding for the message
-      if (messageId) {
-        try {
-          await fetch("/api/avatars/embed", {
+          const uploadResponse = await fetch("/api/files", {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              messageId,
-              messageType: "direct_message",
-              workspaceId: workspace.id,
-            }),
+            body: formData,
           })
-        } catch (error) {
-          console.error("Failed to generate embedding:", error)
-          // Don't throw here as the message was still sent successfully
+
+          if (!uploadResponse.ok) {
+            throw new Error("Failed to upload file")
+          }
+
+          const fileData = await uploadResponse.json()
+          uploadedFiles.push(fileData.id)
         }
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to send message")
-      throw err
+
+      // Then create the message with file references
+      const response = await fetch("/api/direct-messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          content: content.trim(),
+          receiverId: otherUser.id,
+          workspaceId: workspace.id,
+          fileIds: uploadedFiles,
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        console.error("Message creation error:", error)
+        alert("Failed to send message")
+        return
+      }
+
+      // Embedding is now handled by database triggers
+      // No need to make a separate API call
+
+      setContent("")
+    } catch (error) {
+      console.error("Error sending message:", error)
+      alert("Failed to send message")
     } finally {
       setIsLoading(false)
     }

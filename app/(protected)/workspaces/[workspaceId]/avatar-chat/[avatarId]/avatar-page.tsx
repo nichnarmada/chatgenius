@@ -18,12 +18,14 @@ interface AvatarPageProps {
   workspaceId: string
   avatarConfig: AvatarConfig
   messages: Message[]
+  chatId: string
 }
 
 export function AvatarPage({
   workspaceId,
   avatarConfig,
   messages: initialMessages,
+  chatId,
 }: AvatarPageProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [isLoading, setIsLoading] = useState(false)
@@ -35,7 +37,7 @@ export function AvatarPage({
     }
   }, [messages])
 
-  const handleSubmit = async (content: string) => {
+  const handleSubmit = async (content: string, _files?: File[]) => {
     if (!content.trim()) return
 
     // Immediately add user message and loading state
@@ -58,9 +60,8 @@ export function AvatarPage({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          message: content,
-          workspaceId,
-          avatarConfigId: avatarConfig.id,
+          message: content.trim(),
+          chatId,
         }),
       })
 
