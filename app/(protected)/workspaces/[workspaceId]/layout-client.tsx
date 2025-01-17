@@ -359,29 +359,17 @@ export function WorkspaceLayoutClient({
     }
   }, [workspace.id, supabase])
 
+  // Fetch avatar configs
   useEffect(() => {
     const fetchAvatarConfigs = async () => {
       const { data: configs } = await supabase
         .from("avatar_configs")
-        .select(
-          `
-          id,
-          name,
-          active,
-          system_prompt,
-          source_type,
-          source_id,
-          created_by_user_id,
-          workspace_id,
-          created_at,
-          updated_at
-        `
-        )
+        .select("*")
         .eq("workspace_id", workspace.id)
         .eq("active", true)
 
       if (configs) {
-        setAvatarConfigs(configs)
+        setAvatarConfigs(configs as AvatarConfig[])
       }
     }
 

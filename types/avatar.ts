@@ -6,6 +6,7 @@ export type AvatarSourceType = "channel" | "user"
 export interface AvatarConfig {
   id: string
   name: string
+  active: boolean
   system_prompt: string
   source_type: AvatarSourceType
   source_id: string

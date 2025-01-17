@@ -113,7 +113,7 @@ export function AvatarPage({
             {messages?.map((message) => (
               <AvatarChatUI
                 key={message.id}
-                avatarConfig={avatarConfig}
+                config={avatarConfig}
                 message={message}
               />
             ))}
