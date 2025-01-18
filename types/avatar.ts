@@ -1,12 +1,19 @@
 import { Profile } from "./profile"
 
-// Core types for avatar configuration
+// Source types
 export type AvatarSourceType = "channel" | "user"
 
+// Settings for embedding behavior
+export interface EmbeddingSettings {
+  recent_messages_count: number // 10-40 messages
+  similarity_threshold: number // 0.0-1.0
+  max_context_messages: number // How many similar messages to include
+}
+
+// The configuration for an AI avatar
 export interface AvatarConfig {
   id: string
   name: string
-  active: boolean
   system_prompt: string
   source_type: AvatarSourceType
   source_id: string
@@ -14,24 +21,10 @@ export interface AvatarConfig {
   workspace_id: string
   created_at: string
   updated_at: string
-  message_history_limit: number
+  embedding_settings: EmbeddingSettings
 }
 
-// Chat types
-export interface AvatarChat {
-  id: string
-  title: string
-  config_id: string
-  created_by_user_id: string
-  workspace_id: string
-  source_type: AvatarSourceType
-  source_id: string
-  created_at: string
-  updated_at: string
-  config?: AvatarConfig
-  messages?: AvatarChatMessage[]
-}
-
+// A message in the chat
 export interface AvatarChatMessage {
   id: string
   chat_id: string
@@ -40,7 +33,30 @@ export interface AvatarChatMessage {
   created_at: string
 }
 
-// Embedding types
+// The chat instance
+export interface AvatarChat {
+  id: string
+  title: string
+  config_id: string
+  source_type: AvatarSourceType
+  source_id: string
+  created_by_user_id: string
+  workspace_id: string
+  created_at: string
+  updated_at: string
+  config?: AvatarConfig
+  messages?: AvatarChatMessage[]
+}
+
+// For the chat list UI
+export interface AvatarChatListItem {
+  id: string
+  title: string
+  last_message_at: string
+  preview: string
+}
+
+// For embeddings
 export type EmbeddingStatus = "pending" | "processing" | "completed" | "failed"
 
 export interface AvatarEmbedding {
@@ -49,17 +65,12 @@ export interface AvatarEmbedding {
   embedding: number[] | null
   status: EmbeddingStatus
   error?: string
-  chat_id: string
+  source_type: AvatarSourceType
+  source_id: string
+  avatar_config_id: string
+  workspace_id: string
   created_at: string
   updated_at: string
-}
-
-// UI types
-export interface AvatarChatListItem {
-  id: string
-  name: string
-  last_message_at: string
-  preview: string
 }
 
 // API types
@@ -72,13 +83,9 @@ export interface ChatResponse {
   response: string
 }
 
-// Context message types
-export interface ChannelMessage {
+// For context messages
+export interface ContextMessage {
   content: string
-  profiles: Pick<Profile, "display_name">
-}
-
-export interface DirectMessage {
-  content: string
-  profiles: Pick<Profile, "display_name">
+  sender_name: string
+  created_at: string
 }

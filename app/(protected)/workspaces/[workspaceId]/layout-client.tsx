@@ -364,9 +364,21 @@ export function WorkspaceLayoutClient({
     const fetchAvatarConfigs = async () => {
       const { data: configs } = await supabase
         .from("avatar_configs")
-        .select("*")
+        .select(
+          `
+          id,
+          name,
+          system_prompt,
+          source_type,
+          source_id,
+          created_by_user_id,
+          workspace_id,
+          created_at,
+          updated_at,
+          embedding_settings
+        `
+        )
         .eq("workspace_id", workspace.id)
-        .eq("active", true)
 
       if (configs) {
         setAvatarConfigs(configs as AvatarConfig[])

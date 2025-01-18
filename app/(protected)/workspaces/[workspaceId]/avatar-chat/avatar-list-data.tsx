@@ -1,9 +1,24 @@
-import { createClient } from "@/utils/supabase/server"
+import { createServerClient } from "@supabase/ssr"
+import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { AvatarChatListItem } from "@/types/avatar"
 
 export async function getAvatarChats(workspaceId: string) {
-  const supabase = await createClient()
+  const cookieStore = await cookies()
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
+        },
+        setAll() {
+          // This is a read-only operation in a Server Component
+        },
+      },
+    }
+  )
 
   const {
     data: { user },
@@ -27,19 +42,17 @@ export async function getAvatarChats(workspaceId: string) {
       id,
       title,
       config_id,
-      created_by_user_id,
-      workspace_id,
       source_type,
       source_id,
+      created_by_user_id,
+      workspace_id,
       created_at,
       updated_at,
       config:avatar_configs!inner (
         id,
         name,
         system_prompt,
-        source_type,
-        source_id,
-        message_history_limit
+        embedding_settings
       ),
       messages:avatar_chat_messages (
         query,
@@ -48,7 +61,7 @@ export async function getAvatarChats(workspaceId: string) {
       )
     `
     )
-    .eq("created_by_user_id", user.id)
+    .eq("workspace_id", workspaceId)
     .order("updated_at", { ascending: false })
     .limit(1, { foreignTable: "messages" })
 
@@ -61,11 +74,9 @@ export async function getAvatarChats(workspaceId: string) {
   return (chats || []).map(
     (chat): AvatarChatListItem => ({
       id: chat.id,
-      name: chat.title,
+      title: chat.title,
       last_message_at: chat.messages?.[0]?.created_at || chat.updated_at,
-      preview: chat.messages?.[0]
-        ? `Q: ${chat.messages[0].query}\nA: ${chat.messages[0].response}`
-        : "No messages yet",
+      preview: chat.messages?.[0]?.query || "No messages yet",
     })
   )
 }

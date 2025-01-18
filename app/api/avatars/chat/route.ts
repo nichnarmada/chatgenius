@@ -1,52 +1,150 @@
 import { createClient } from "@/utils/supabase/server"
-import { NextResponse } from "next/server"
-import { OpenAI } from "openai"
-import { AvatarChat, ChatRequest, ChatResponse } from "@/types/avatar"
+import { NextResponse, type NextRequest } from "next/server"
+import OpenAI from "openai"
+import type { ChatRequest, ChatResponse, AvatarChat } from "@/types/avatar"
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY!,
 })
+
+export async function GET(request: NextRequest) {
+  try {
+    const supabase = await createClient()
+    const searchParams = request.nextUrl.searchParams
+    const workspaceId = searchParams.get("workspaceId")
+
+    if (!workspaceId) {
+      return NextResponse.json(
+        { error: "Workspace ID is required" },
+        { status: 400 }
+      )
+    }
+
+    // Check authentication
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser()
+    if (userError || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    // Verify workspace membership
+    const { data: membership, error: membershipError } = await supabase
+      .from("workspace_members")
+      .select("role")
+      .eq("workspace_id", workspaceId)
+      .eq("user_id", user.id)
+      .single()
+
+    if (membershipError || !membership) {
+      return NextResponse.json(
+        { error: "Not a workspace member" },
+        { status: 403 }
+      )
+    }
+
+    // Get all chats for this workspace
+    const { data: chats, error: chatsError } = await supabase
+      .from("avatar_chats")
+      .select(
+        `
+        id,
+        title,
+        config_id,
+        source_type,
+        source_id,
+        created_by_user_id,
+        workspace_id,
+        created_at,
+        updated_at,
+        config:avatar_configs!inner (
+          id,
+          name,
+          system_prompt,
+          embedding_settings
+        ),
+        messages:avatar_chat_messages (
+          created_at,
+          query,
+          response
+        )
+      `
+      )
+      .eq("workspace_id", workspaceId)
+      .order("created_at", { ascending: false })
+
+    if (chatsError) {
+      console.error("Error fetching chats:", chatsError)
+      return NextResponse.json(
+        { error: "Failed to fetch chats" },
+        { status: 500 }
+      )
+    }
+
+    // Format chats for the list view
+    const chatList = chats.map((chat) => ({
+      id: chat.id,
+      title: chat.title,
+      last_message_at: chat.messages?.[0]?.created_at || chat.created_at,
+      preview: chat.messages?.[0]?.query || "No messages yet",
+    }))
+
+    return NextResponse.json({ chats: chatList })
+  } catch (error) {
+    console.error("Error in GET /api/avatars/chat:", error)
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    )
+  }
+}
 
 export async function POST(request: Request) {
   try {
     const supabase = await createClient()
 
+    // Check authentication
     const {
       data: { user },
       error: userError,
     } = await supabase.auth.getUser()
-
     if (userError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { message, chatId } = (await request.json()) as ChatRequest
+    // Get request body
+    const { chatId, message }: ChatRequest = await request.json()
 
     if (!message || !chatId) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: "Message and chat ID are required" },
         { status: 400 }
       )
     }
 
-    // Fetch chat and its config
+    // Get the chat and its config
     const { data: chat, error: chatError } = await supabase
       .from("avatar_chats")
       .select(
         `
-        *,
+        id,
+        title,
+        config_id,
+        source_type,
+        source_id,
+        workspace_id,
         config:avatar_configs!inner (
           id,
-          name,
           system_prompt,
-          message_history_limit
+          embedding_settings
         )
       `
       )
       .eq("id", chatId)
-      .single()
+      .single<AvatarChat>()
 
-    if (chatError || !chat) {
+    if (chatError || !chat?.config) {
       console.error("Error fetching chat:", chatError)
       return NextResponse.json(
         { error: "Failed to fetch chat" },
@@ -54,7 +152,22 @@ export async function POST(request: Request) {
       )
     }
 
-    // Generate embedding for user message
+    // Verify workspace membership
+    const { data: membership, error: membershipError } = await supabase
+      .from("workspace_members")
+      .select("role")
+      .eq("workspace_id", chat.workspace_id)
+      .eq("user_id", user.id)
+      .single()
+
+    if (membershipError || !membership) {
+      return NextResponse.json(
+        { error: "Not a workspace member" },
+        { status: 403 }
+      )
+    }
+
+    // Create embedding for the query
     const embedding = await openai.embeddings.create({
       model: "text-embedding-3-small",
       input: message,
@@ -66,9 +179,9 @@ export async function POST(request: Request) {
       "search_avatar_embeddings",
       {
         query_embedding: embedding.data[0].embedding,
-        avatar_config_id: chat.config.id,
-        match_threshold: 0.7,
-        match_count: 5,
+        avatar_config_id: chat.config_id,
+        match_threshold: chat.config.embedding_settings.similarity_threshold,
+        match_count: chat.config.embedding_settings.max_context_messages,
       }
     )
 
@@ -79,8 +192,8 @@ export async function POST(request: Request) {
     // Format context from similar content
     const context = similarContent
       ? `Here are some relevant previous messages:\n${similarContent
-          .map((item) => `Q: ${item.query}\nA: ${item.response}`)
-          .join("\n\n")}`
+          .map((item: { content: string }) => item.content)
+          .join("\n")}`
       : ""
 
     // Generate response using OpenAI
@@ -88,18 +201,19 @@ export async function POST(request: Request) {
       model: "gpt-4-turbo-preview",
       messages: [
         {
-          role: "system" as const,
+          role: "system",
           content: chat.config.system_prompt,
         },
         {
-          role: "system" as const,
+          role: "system",
           content: context,
         },
         {
-          role: "user" as const,
+          role: "user",
           content: message,
         },
-      ].filter((msg) => msg.content), // Remove empty messages
+      ],
+      temperature: 0.7,
     })
 
     const response = completion.choices[0].message.content
@@ -115,6 +229,7 @@ export async function POST(request: Request) {
         chat_id: chatId,
         query: message,
         response: response,
+        sender_id: user.id,
       })
 
     if (messageError) {
@@ -125,40 +240,8 @@ export async function POST(request: Request) {
       )
     }
 
-    // Create embedding for the response
-    const responseEmbedding = await openai.embeddings.create({
-      model: "text-embedding-3-small",
-      input: response,
-      encoding_format: "float",
-    })
-
-    // Store the response embedding
-    const { error: embeddingError } = await supabase.rpc(
-      "manage_avatar_embedding",
-      {
-        p_content: response,
-        p_source_type: chat.source_type,
-        p_source_id: chat.source_id,
-        p_avatar_config_id: chat.config.id,
-        p_workspace_id: chat.workspace_id,
-      }
-    )
-
-    if (embeddingError) {
-      console.error("Error storing response embedding:", embeddingError)
-    }
-
-    // Update chat's updated_at timestamp
-    const { error: updateError } = await supabase
-      .from("avatar_chats")
-      .update({ updated_at: new Date().toISOString() })
-      .eq("id", chatId)
-
-    if (updateError) {
-      console.error("Error updating chat:", updateError)
-    }
-
-    return NextResponse.json({ response } satisfies ChatResponse)
+    const chatResponse: ChatResponse = { response }
+    return NextResponse.json(chatResponse)
   } catch (error) {
     console.error("Error in chat endpoint:", error)
     return NextResponse.json(

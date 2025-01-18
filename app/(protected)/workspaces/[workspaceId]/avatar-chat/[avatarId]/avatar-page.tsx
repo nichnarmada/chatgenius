@@ -11,6 +11,12 @@ interface Message {
   query: string
   response: string
   created_at: string
+  sender?: {
+    id: string
+    email: string
+    display_name: string
+    avatar_url: string | null
+  }
   isLoading?: boolean
 }
 
@@ -61,12 +67,13 @@ export function AvatarPage({
         },
         body: JSON.stringify({
           message: content.trim(),
-          chatId,
+          chatId: chatId,
         }),
       })
 
       if (!response.ok) {
-        throw new Error("Failed to send message")
+        const error = await response.json()
+        throw new Error(error.error || "Failed to send message")
       }
 
       const data = await response.json()

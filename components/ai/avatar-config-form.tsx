@@ -173,7 +173,12 @@ export function AvatarConfigForm({
             source_id: data.source_id,
             created_by_user_id: userData.user.id,
             workspace_id: workspaceId,
-            message_history_limit: data.message_history_limit,
+            embedding_settings: {
+              recent_messages_count: data.message_history_limit,
+              similarity_threshold: 0.7,
+              max_context_messages: 10,
+              include_recent_messages: true,
+            },
           })
           .select()
           .single()

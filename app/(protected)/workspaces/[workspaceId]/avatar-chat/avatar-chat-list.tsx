@@ -48,20 +48,20 @@ export function AvatarChatList({
   const handleDeleteChat = async (chatId: string) => {
     setIsDeletingChat(chatId)
     try {
-      const { error: deleteError } = await supabase
-        .from("avatar_chats")
-        .delete()
-        .eq("id", chatId)
+      const response = await fetch(`/api/avatars/chat/${chatId}`, {
+        method: "DELETE",
+      })
 
-      if (deleteError) {
-        console.error("Error deleting chat:", deleteError)
-        throw deleteError
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to delete chat")
       }
 
       setChats((prev) => prev.filter((chat) => chat.id !== chatId))
       toast.success("Chat deleted successfully")
     } catch (error) {
       console.error("Error in handleDeleteChat:", error)
+      toast.error("Failed to delete chat")
     } finally {
       setIsDeletingChat(null)
     }
@@ -106,7 +106,7 @@ export function AvatarChatList({
                   <MessageSquare className="mt-1 h-5 w-5 text-muted-foreground" />
                   <div className="flex-1 space-y-1 text-left">
                     <div className="flex items-center justify-between">
-                      <p className="font-semibold">{chat.name}</p>
+                      <p className="font-semibold">{chat.title}</p>
                       <span className="text-xs text-muted-foreground">
                         {formatDistanceToNow(new Date(chat.last_message_at), {
                           addSuffix: true,
